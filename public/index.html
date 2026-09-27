@@ -456,8 +456,16 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   }
 
   function boot() {
+    if (window.__BANK_PLAIN__) { start(window.__BANK_PLAIN__); return; }   /* 本地明文版（不出公网） */
     var payload = window.__BANK_ENC__;
     if (!payload) { $('boot').innerHTML = '题库数据缺失（bank.enc.js 未加载）'; return; }
+    if (!window.crypto || !window.crypto.subtle) {
+      $('boot').innerHTML = '<b>这个地址不支持解密</b><br><br>' +
+        '浏览器只在 HTTPS（或本地文件）下提供解密能力，http://局域网地址 不行。<br><br>' +
+        '请改用：<br>① 部署后的 https 链接；或<br>② 本地明文版 <code>local/index.html</code>（同一 Wi-Fi 下开 http 服务）；或<br>' +
+        '③ 把 offline.html 存到手机本地打开。';
+      return;
+    }
     var saved = load(LS.pass, null);
     if (saved) {
       decrypt(saved, payload).then(function (bank) { start(bank); }, function () { askPass('口令失效，请重新输入'); });
