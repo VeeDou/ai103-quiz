@@ -131,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"9c7c570682","at":"2026-09-27 15:19","bank":"2026-09-27 23:19"};</script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"fca5237de1","at":"2026-09-27 15:35","bank":"2026-09-27 23:35"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -316,6 +316,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         case 'wrong': return !!r && (r.lapses > 0 || r.last === 'wrong' || r.last === 'partial' || r.unsure);
         case 'unsure': return !!r && r.unsure;
         case 'unmastered': return !mastered(r);
+        case 'halfway': /* 已连对 1 次（差一次就掌握） */
+          return !!r && r.seen > 0 && !mastered(r) && (r.streak || 0) >= 1 && !r.unsure;
         case 'unseen': return !r || !r.seen;
         case 'star': return !!r && r.star;
         case 'conflict': return (q.flags || []).indexOf('conflict') >= 0;
@@ -372,7 +374,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   function stats(bank, records) {
     var s = {
       total: bank.questions.length, seen: 0, mastered: 0, wrong: 0, partial: 0,
-      unsure: 0, unseen: 0, selfcheck: 0, conflicts: [], byDomain: {}, weakList: []
+      unsure: 0, unseen: 0, selfcheck: 0, conflicts: [], byDomain: {}, weakList: [],
+      halfway: 0, notYet: 0
     };
     bank.questions.forEach(function (q) {
       var r = records[q.id];
@@ -382,6 +385,10 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       if (!r || !r.seen) s.unseen++;
       else s.seen++;
       if (mastered(r)) { s.mastered++; s.byDomain[d].mastered++; }
+      else if (r && r.seen) {
+        if ((r.streak || 0) >= 1 && !r.unsure) s.halfway++;   /* 连对 1 次：再答对一次就掌握 */
+        else s.notYet++;                                      /* 还没连对过 / 有蒙标记 */
+      }
       if (r && r.last === 'wrong') { s.wrong++; s.byDomain[d].wrong++; }
       if (r && r.last === 'partial') s.partial++;
       if (r && r.unsure) s.unsure++;
@@ -580,18 +587,24 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '<div class="row" style="justify-content:space-between"><b style="font-size:30px">' + pct + '%</b>' +
         '<span class="badge" style="color:' + readyTxt[1] + ';border-color:' + readyTxt[1] + '">' + readyTxt[0] + '</span></div>' +
         '<div class="bar" style="margin:10px 0"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="grid3">' +
-          '<div class="stat"><b>' + st.mastered + '</b><span>已掌握（连对2次）</span></div>' +
-          '<div class="stat"><b>' + st.wrong + '</b><span>上次答错</span></div>' +
-          '<div class="stat"><b>' + st.unseen + '</b><span>没做过</span></div>' +
+        '<div class="grid2">' +
+          '<div class="stat"><b style="color:var(--ok)">' + st.mastered + '</b><span>已掌握（连对 2 次）</span></div>' +
+          '<div class="stat"><b style="color:var(--warn)">' + st.halfway + '</b><span>差一次就掌握（连对 1 次）</span></div>' +
+          '<div class="stat"><b>' + st.notYet + '</b><span>还没连对过 / 有蒙标记</span></div>' +
+          '<div class="stat"><b>' + st.unseen + '</b><span>还没做过</span></div>' +
         '</div>' +
-        '<div class="muted" style="margin-top:10px">合计 ' + st.total + ' 题：旧库 135 + 新库补充 18；' +
+        '<div class="note" style="margin-top:12px"><b>为什么答对了很多题，掌握还是 0？</b><br>' +
+          '掌握判据是<b>同一题连续 2 次答对</b>（单次答对只算「连对 1 次」，因为仓库规则要求"蒙对＝错题、一次答对不算会"）。' +
+          '所以你刚答对的那些题现在都在中间那格 <b>' + st.halfway + '</b> 里——<b>再答对一次就变成已掌握</b>。</div>' +
+        '<div class="muted" style="margin-top:8px">合计 ' + st.total + ' 题：旧库 135 + 新库补充 18；' +
         '错/蒙/半对 ' + wrongN + ' 题待消化，存疑题 ' + st.conflicts.length + ' 道。</div>' +
       '</div>' +
       '<div class="card">' +
         '<h2>开刷</h2>' +
         '<button class="btn primary block" id="goMemory">记忆队列（' + Math.min(S.limit, due) + ' 题）</button>' +
         '<button class="btn block" id="goRandom">随机 ' + S.limit + ' 题（域占比模拟）</button>' +
+        (st.halfway ? '<button class="btn block" id="goHalf" style="border-color:var(--warn);color:var(--warn)">' +
+          '⚡ 专刷「差一次就掌握」的 ' + st.halfway + ' 题（刷完掌握数直接涨）</button>' : '') +
         '<div class="grid2">' +
           '<button class="btn sm" id="goWrong">错题本（' + wrongN + '）</button>' +
           '<button class="btn sm" id="goUnmastered">未掌握</button>' +
@@ -611,6 +624,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       lastSessionCard();
     $('goMemory').onclick = function () { startQueue('memory'); };
     $('goRandom').onclick = function () { startQueue('random20'); };
+    if ($('goHalf')) $('goHalf').onclick = function () { startQueue('halfway', { limit: 999 }); };
     $('goWrong').onclick = function () { startQueue('wrong'); };
     $('goUnmastered').onclick = function () { startQueue('unmastered'); };
     $('goUnseen').onclick = function () { startQueue('unseen'); };
@@ -900,6 +914,11 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       '旧库 key：' + esc(bk.legacy || '—') + '　｜　新库：' + newPart + '<br>' +
       '应用现判定：' + esc((q.answerLetters || []).join('') || q.answerText.slice(0, 30)) + '<br>' +
       '来源：' + esc(srcText) + '</div>';
+    var mNow = A.mastered(r);
+    var progHtml = '<div class="note" style="border-left-color:' + (mNow ? 'var(--ok)' : 'var(--warn)') + '">' +
+      (mNow ? '✅ 本题已掌握（连对 ' + (r.streak || 0) + ' 次）'
+            : '⏳ 本题连对 ' + (r.streak || 0) + '/' + A.MASTER_STREAK + '：<b>再答对一次就算掌握</b>' +
+              (r.unsure ? '（当前有未消化的「蒙」标记，答对也要先消掉它）' : '')) + '</div>';
     var hist = '<div class="muted">历史：做过 ' + (r.seen || 0) + ' 次｜连对 ' + (r.streak || 0) +
       '｜累计错 ' + (r.lapses || 0) + '｜' + (r.unsure ? '有未消化的「蒙」' : '无蒙标记') +
       (r.verdictText ? '｜上次判定：' + esc(r.verdictText) : '') +
@@ -909,7 +928,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var exp = q.explain ? '<details open><summary>题库解析</summary><div class="dc">' + A.para(q.explain) + '</div></details>' : '';
     $('fb').innerHTML = '<div class="fb ' + cls + '"><div class="h">' + head + '</div><div class="b">' +
       (srcBadges ? '<div class="row wrap" style="margin-bottom:8px">' + srcBadges + '</div>' : '') +
-      dt + banksHtml + corrHtml + notes + exp + hist + raw + '</div></div>';
+      progHtml + dt + banksHtml + corrHtml + notes + exp + hist + raw + '</div></div>';
   }
 
   function renderSummary() {
@@ -923,12 +942,15 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '<div class="stat"><b style="color:var(--bad)">' + s.wrong + '</b><span>错/蒙</span></div>' +
       '</div>' +
       (s.wrongIds.length ? '<div class="muted" style="margin-top:10px">错题：' + s.wrongIds.join(' ') + '</div>' : '<div class="muted" style="margin-top:10px">本轮没有错题 👍</div>') +
-      '<div class="muted" style="margin-top:8px">全库掌握率 ' + Math.round(st.masteryRate * 100) + '%（' + st.mastered + '/' + st.total + '）</div>' +
+      '<div class="note" style="margin-top:10px">全库掌握率 ' + Math.round(st.masteryRate * 100) + '%（' + st.mastered + '/' + st.total + '）<br>' +
+        '现在有 <b>' + st.halfway + '</b> 题是「连对 1 次」状态——<b>它们再答对一次就变已掌握</b>。</div>' +
+      (st.halfway ? '<button class="btn primary block" id="goHalf2">⚡ 接着刷「差一次」的 ' + st.halfway + ' 题</button>' : '') +
       '<button class="btn primary block" id="again">再来一轮记忆队列</button>' +
       (s.wrongIds.length ? '<button class="btn block" id="redo">只重刷本轮错题</button>' : '') +
       '<button class="btn ghost block" id="backHome">回首页</button>' +
       '</div>';
     $('again').onclick = function () { startQueue('memory'); };
+    if ($('goHalf2')) $('goHalf2').onclick = function () { startQueue('halfway', { limit: 999 }); };
     if (s.wrongIds.length) $('redo').onclick = function () {
       view.queue = s.wrongIds.map(function (id) { return findQ(id); }).filter(Boolean);
       view.qi = 0; view.session = { mode: 'redo', done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
@@ -964,11 +986,13 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     }).join('');
     $('main').innerHTML =
       '<div class="card"><h2>总览</h2>' +
-        '<div class="grid3">' +
-          '<div class="stat"><b>' + st.mastered + '</b><span>已掌握</span></div>' +
-          '<div class="stat"><b>' + st.seen + '</b><span>做过</span></div>' +
+        '<div class="grid2">' +
+          '<div class="stat"><b style="color:var(--ok)">' + st.mastered + '</b><span>已掌握（连对 2 次）</span></div>' +
+          '<div class="stat"><b style="color:var(--warn)">' + st.halfway + '</b><span>差一次就掌握</span></div>' +
+          '<div class="stat"><b>' + st.notYet + '</b><span>未连对/有蒙</span></div>' +
           '<div class="stat"><b>' + st.unseen + '</b><span>没做过</span></div>' +
         '</div>' +
+        '<button class="btn block sm" id="goHalf3">⚡ 刷「差一次」的 ' + st.halfway + ' 题</button>' +
         '<div class="row wrap" style="margin-top:10px">' +
           '<span class="badge" style="color:var(--bad)">上次答错 ' + st.wrong + '</span>' +
           '<span class="badge" style="color:var(--warn)">半对 ' + st.partial + '</span>' +
@@ -997,6 +1021,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       '<div class="card"><h2>还没掌握的题（' + st.weakList.length + '）</h2><ul class="list">' + weak + '</ul>' +
         '<button class="btn block sm" id="drill">刷这些题</button></div>';
     $('drill').onclick = function () { startQueue('unmastered'); };
+    if ($('goHalf3')) $('goHalf3').onclick = function () { startQueue('halfway', { limit: 999 }); };
   }
 
   /* ---------------------------------------------------- 笔记 */
