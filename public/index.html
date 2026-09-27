@@ -412,6 +412,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       else if (s.verdict === 'unsure') { rec.last = 'right'; rec.streak = 0; rec.unsure = true; rec.box = 0; }
       else if (s.verdict === 'partial') { rec.last = 'partial'; rec.streak = 0; rec.box = 0; }
       else if (s.verdict === 'skipped') { rec.seen = 0; rec.last = null; rec.box = 0; }
+      else if (s.verdict === 'conflict') { rec.last = 'partial'; rec.streak = 0; rec.box = 0; }
       else { rec.last = 'wrong'; rec.streak = 0; rec.lapses = 1; rec.box = 0; }
       rec.due = today();
       out[id] = rec;

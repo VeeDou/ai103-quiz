@@ -1,5 +1,5 @@
-/* AI-103 刷题 · 离线缓存 99965b1326 */
-const C = 'ai103-99965b1326';
+/* AI-103 刷题 · 离线缓存 e96fb72aac */
+const C = 'ai103-e96fb72aac';
 const F = ['./', './index.html', './bank.enc.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(F)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
