@@ -101,6 +101,12 @@ nav.tabs button b{display:block;font-size:19px;font-weight:400;line-height:1.25}
 input[type=text],input[type=password],input[type=search]{width:100%;font:inherit;color:var(--txt);
   background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px}
 .hint{font-size:12px;color:var(--dim);margin-top:6px}
+.badge.ok2{color:#8ff0c0;border-color:#2c5c4b;background:#12271c}
+details.corr{border-color:#2c5c4b;background:#111f19}
+details.corr summary{color:#8ff0c0}
+ul.ev{margin:6px 0 0;padding-left:18px}
+ul.ev li{margin:8px 0;font-size:13px}
+ul.ev .q{color:var(--dim);font-size:12px;margin-top:2px}
 .spin{text-align:center;padding:40px 0;color:var(--dim)}
 .hide{display:none!important}
 code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
@@ -177,15 +183,25 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   /* ------------------------------------------------------------ 判分 */
   function grade(q, ans) {
     ans = ans || {};
-    var detail = [], total = 0, hit = 0, ok = false, partial = false;
+    var detail = [], total = 0, hit = 0, ok = false, partial = false, alt = false;
     if (q.type === 'single' || q.type === 'multi') {
       var mine = (ans.letters || []).slice().sort();
       var key = (q.answerLetters || []).slice().sort();
       hit = mine.filter(function (l) { return key.indexOf(l) >= 0; }).length;
       total = key.length;
       ok = mine.length === key.length && hit === key.length;
+      /* 争议题：同一批选项里的旧口径答案也接受（考场优先官方口径） */
+      if (!ok && (q.altAccepted || []).length) {
+        var alts = q.altAccepted.slice().sort();
+        if (mine.length === alts.length && mine.every(function (l) { return alts.indexOf(l) >= 0; })) {
+          ok = true; alt = true; hit = total;
+        }
+      }
       partial = !ok && hit > 0;
-      detail.push({ label: '选项', ok: ok, mine: mine.join('、') || '（未选）', key: key.join('、'), partial: partial });
+      detail.push({
+        label: '选项', ok: ok, mine: mine.join('、') || '（未选）', key: key.join('、'),
+        partial: partial, alt: alt
+      });
     } else if (q.type === 'blanks') {
       var ms = ans.blanks || [];
       (q.blanks || []).forEach(function (b, i) {
@@ -229,7 +245,10 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       hit = ok ? 1 : 0;
       detail.push({ label: '自评', ok: ok, mine: ans.self === 'right' ? '我答对了' : '我答错了', key: q.answerText });
     }
-    return { ok: ok, partial: partial, hit: hit, total: total, detail: detail, selfcheck: q.type === 'selfcheck' };
+    return {
+      ok: ok, partial: partial, hit: hit, total: total, detail: detail,
+      alt: alt, selfcheck: q.type === 'selfcheck'
+    };
   }
 
   /* ------------------------------------------------------------ 记忆（间隔重复） */
@@ -413,11 +432,25 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     }).join('');
   }
 
+  /* 把正文里的 http(s) 链接变成可点的 <a>（先转义再替换，避免 XSS） */
+  function linkify(text) {
+    return esc(text).replace(/(https?:\/\/[^\s<>"）)】]+)/g, function (u) {
+      return '<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + u + '</a>';
+    });
+  }
+
+  function paraLink(text) {
+    return linkify(text).split(/\n{2,}/).map(function (p) {
+      return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+
   root.A103 = {
     norm: norm, normExact: normExact, same: same, candHit: candHit, grade: grade,
     applyResult: applyResult, newRecord: newRecord,
     mastered: mastered, isWeak: isWeak, buildQueue: buildQueue, stats: stats, seedRecords: seedRecords,
-    today: today, shuffle: shuffle, esc: esc, para: para, INTERVALS: INTERVALS, MASTER_STREAK: MASTER_STREAK
+    today: today, shuffle: shuffle, esc: esc, para: para, linkify: linkify, paraLink: paraLink,
+    INTERVALS: INTERVALS, MASTER_STREAK: MASTER_STREAK
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -616,6 +649,14 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       start: startQueue,
       records: function () { return records; },
       setLimit: function (n) { S.limit = n; },
+      startIds: function (ids) {
+        var qs = ids.map(findQ).filter(Boolean);
+        if (!qs.length) return;
+        view.queue = qs; view.qi = 0;
+        view.session = { mode: 'ids', done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
+        view.tab = 'quiz';
+        renderQuiz();
+      },
       clear: function () { records = {}; }
     };
   }
@@ -627,17 +668,30 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var r = records[q.id] || {};
     var caseHtml = q.caseRef && BANK.cases[q.caseRef]
       ? '<details><summary>案例背景（' + esc(BANK.cases[q.caseRef].title) + '）</summary><div class="dc">' + A.para(BANK.cases[q.caseRef].text) + '</div></details>' : '';
+    var corrHtml = q.correction
+      ? '<details class="corr"><summary>★ 这题已按官方口径核对（原库 key = ' + esc(q.correction.oldKey || '?') +
+        '，现按 ' + esc((q.answerLetters || []).join('')) + '）</summary><div class="dc">' +
+        '<div>' + A.paraLink(q.correction.why) + '</div>' +
+        '<ul class="ev">' + (q.correction.evidence || []).map(function (e) {
+          return '<li><a href="' + e.url + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' +
+            '<div class="q">' + A.linkify(e.quote) + '</div></li>';
+        }).join('') + '</ul>' +
+        (q.altAccepted && q.altAccepted.length
+          ? '<div class="muted">争议题处理：' + esc(q.altAccepted.join('、')) + ' 也算对（旧库口径），考试优先选 ' +
+            esc((q.answerLetters || []).join('')) + '。</div>' : '') +
+        '</div></details>' : '';
     $('main').innerHTML =
       '<div class="card" id="qcard" data-qid="' + q.id + '">' +
         '<div class="row wrap" style="margin-bottom:8px">' +
           '<span class="badge ' + q.domain.toLowerCase() + '">' + q.domain + ' ' + esc(domainName(q.domain)) + '</span>' +
           '<span class="badge">' + esc(q.kind || '') + '</span>' +
           (q.type === 'selfcheck' ? '<span class="badge self">自评卡</span>' : '') +
+          (q.correction ? '<span class="badge ok2">已核对官方口径</span>' : '') +
           ((q.flags || []).indexOf('conflict') >= 0 ? '<span class="badge conf">★口径冲突</span>' : '') +
           '<span class="badge">' + (view.qi + 1) + '/' + view.queue.length + '</span>' +
           (r.star ? '<span class="badge" style="color:var(--star)">★</span>' : '') +
         '</div>' +
-        caseHtml +
+        caseHtml + corrHtml +
         '<div class="qstem" id="stem">' + A.para(q.stem) + '</div>' +
         '<div id="area"></div>' +
         '<div id="fb"></div>' +
@@ -797,7 +851,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   function showFeedback(q, revealed) {
     var g = view.graded, r = records[q.id] || {};
     var cls = g.ok ? 'ok' : (g.partial ? 'part' : 'bad');
-    var head = g.ok ? '✅ 正确' : (g.partial ? '🟡 部分正确（' + g.hit + '/' + g.total + '）' : (revealed ? '📖 参考答案' : '❌ 错误（' + g.hit + '/' + g.total + '）'));
+    var head = g.ok
+      ? (g.alt ? '✅ 正确（争议题：旧库口径也算对，考场优先选 ' + esc((q.answerLetters || []).join('')) + '）' : '✅ 正确')
+      : (g.partial ? '🟡 部分正确（' + g.hit + '/' + g.total + '）' : (revealed ? '📖 参考答案' : '❌ 错误（' + g.hit + '/' + g.total + '）'));
     var dt = '';
     if (!revealed && g.detail.length) {
       dt = '<table class="dt"><tr><th>判定点</th><th>你答</th><th>正确</th></tr>' +
@@ -811,12 +867,12 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var notes = '';
     (q.notes || []).forEach(function (n) {
       notes += '<div class="note warn"><b>' + esc(n.title) + '</b>（' + esc(n.coverage) + '）<br>' +
-        A.para(n.body).replace(/<p>/g, '<div>').replace(/<\/p>/g, '</div>') + '</div>';
+        A.paraLink(n.body).replace(/<p>/g, '<div>').replace(/<\/p>/g, '</div>') + '</div>';
     });
     var conf = BANK.conflicts.filter(function (c) { return 'Q' + c.q === q.id; })[0];
     if (conf) {
-      notes += '<div class="note warn"><b>★ 口径冲突</b><br>旧库：' + esc(conf.legacy) + '<br>新库/官方：' +
-        esc(conf['new']) + '<br>' + esc(conf.note) + '</div>';
+      notes += '<div class="note warn"><b>★ 口径冲突</b><br>旧库/新库：' + esc(conf.legacy) + '<br>现在判定：' +
+        esc(conf['new']) + '<br>' + A.linkify(conf.note) + '</div>';
     }
     var hist = '<div class="muted">历史：做过 ' + (r.seen || 0) + ' 次｜连对 ' + (r.streak || 0) +
       '｜累计错 ' + (r.lapses || 0) + '｜' + (r.unsure ? '有未消化的「蒙」' : '无蒙标记') +
