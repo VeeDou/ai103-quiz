@@ -117,6 +117,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
 <header class="top"><div class="wrap">
   <h1 id="title">AI-103 刷题</h1>
   <span class="pill" id="examPill">考试 09-29</span>
+  <span class="pill" id="verPill" title="构建版本">v…</span>
 </div></header>
 
 <main class="wrap" id="main">
@@ -130,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"9c7c570682","at":"2026-09-27 15:19","bank":"2026-09-27 23:19"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -535,6 +536,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     BANK = bank;
     $('boot').classList.add('hide');
     $('tabs').classList.remove('hide');
+    if (window.__BUILD__ && $('verPill')) {
+      $('verPill').textContent = 'v' + String(window.__BUILD__.hash).slice(0, 6);
+    }
     if (!localStorage.getItem(LS.seed) && bank.historySeed) {
       var seeded = A.seedRecords(bank, bank.historySeed);
       Object.keys(seeded).forEach(function (id) { if (!records[id] || !records[id].seen) records[id] = seeded[id]; });
@@ -1043,6 +1047,14 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '<button class="btn block sm" id="reset">清空所有作答记录</button>' +
         '<div class="hint">清空后不可恢复，请先导出备份。</div>' +
       '</div>' +
+      '<div class="card"><h2>版本</h2>' +
+        '<div class="muted" id="buildInfo">应用构建：' +
+          esc((window.__BUILD__ && window.__BUILD__.hash) || '未知') + '（' +
+          esc((window.__BUILD__ && window.__BUILD__.at) || '—') + '）<br>' +
+          '题库构建：' + esc(BANK.meta.builtAt) + '</div>' +
+        '<button class="btn block sm" id="hard">强制更新到最新版</button>' +
+        '<div class="hint">如果发现界面没更新（缓存），点这个按钮：清缓存 → 注销 Service Worker → 重新加载。</div>' +
+      '</div>' +
       '<div class="card"><h2>题源与声明</h2><div class="muted">' + esc(BANK.meta.disclaimer) + '<br>' +
         '题库以 AES-256-GCM 加密保存，口令只在本机输入；页面本身不含明文题目。</div></div>';
     $('exp').onclick = function () {
@@ -1068,6 +1080,19 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       };
       fr.readAsText(f);
     };
+    $('hard').onclick = function () {
+      var go = function () { location.replace(location.pathname + '?fresh=' + Date.now()); };
+      var p = Promise.resolve();
+      if (window.caches && caches.keys) {
+        p = p.then(function () { return caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); });
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        p = p.then(function () { return navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); })); }); });
+      }
+      p.then(go, go);
+    };
     $('clearPass').onclick = function () { localStorage.removeItem(LS.pass); alert('已清除，刷新页面后需要重新输入口令'); };
     $('reset').onclick = function () {
       if (confirm('确定清空本机所有作答记录？')) { records = {}; commit(); alert('已清空'); render(); }
@@ -1080,6 +1105,20 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   boot();
 })();
 </script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+      reg.update().catch(function () {});
+    }).catch(function () {});
+  });
+  var reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
+}
+</script>
 </body>
 </html>
