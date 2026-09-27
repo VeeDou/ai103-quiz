@@ -669,33 +669,17 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var r = records[q.id] || {};
     var caseHtml = q.caseRef && BANK.cases[q.caseRef]
       ? '<details><summary>案例背景（' + esc(BANK.cases[q.caseRef].title) + '）</summary><div class="dc">' + A.para(BANK.cases[q.caseRef].text) + '</div></details>' : '';
-    var corrHtml = q.correction
-      ? '<details class="corr"><summary>★ 这题已按官方口径核对（原库 key = ' + esc(q.correction.oldKey || '?') +
-        '，现按 ' + esc((q.answerLetters || []).join('')) + '）</summary><div class="dc">' +
-        '<div>' + A.paraLink(q.correction.why) + '</div>' +
-        '<ul class="ev">' + (q.correction.evidence || []).map(function (e) {
-          return '<li><a href="' + e.url + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' +
-            '<div class="q">' + A.linkify(e.quote) + '</div></li>';
-        }).join('') + '</ul>' +
-        (q.altAccepted && q.altAccepted.length
-          ? '<div class="muted">争议题处理：' + esc(q.altAccepted.join('、')) + ' 也算对（旧库口径），考试优先选 ' +
-            esc((q.answerLetters || []).join('')) + '。</div>' : '') +
-        '</div></details>' : '';
+    /* 答题前不显示任何来源标签/更正说明（会暗示答案）；这些一律放到答完之后 */
     $('main').innerHTML =
       '<div class="card" id="qcard" data-qid="' + q.id + '">' +
         '<div class="row wrap" style="margin-bottom:8px">' +
           '<span class="badge ' + q.domain.toLowerCase() + '">' + q.domain + ' ' + esc(domainName(q.domain)) + '</span>' +
           '<span class="badge">' + esc(q.kind || '') + '</span>' +
           (q.type === 'selfcheck' ? '<span class="badge self">自评卡</span>' : '') +
-          (q.correction ? '<span class="badge ok2">已核对官方口径</span>' : '') +
-          (q.banks && q.banks.source === 'both' && !q.correction ? '<span class="badge">两库一致</span>' : '') +
-          (q.banks && q.banks.source === 'legacy' && !q.correction
-            ? '<span class="badge conf">' + (q.banks.multiTruncated ? '新库多选不可比对' : '仅旧库来源') + '</span>' : '') +
-          (q.banks && q.banks.source === 'newbank' ? '<span class="badge self">新库补充题</span>' : '') +
           '<span class="badge">' + (view.qi + 1) + '/' + view.queue.length + '</span>' +
           (r.star ? '<span class="badge" style="color:var(--star)">★</span>' : '') +
         '</div>' +
-        caseHtml + corrHtml +
+        caseHtml +
         '<div class="qstem" id="stem">' + A.para(q.stem) + '</div>' +
         '<div id="area"></div>' +
         '<div id="fb"></div>' +
@@ -888,6 +872,26 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       ? '新库第 ' + bk.newNum + ' 题' + (bk.new ? '，其 key = ' + esc(bk.new) : '，其答案字段不可用') +
         (bk.sim ? '（同题相似度 ' + bk.sim + '）' : '')
       : '新库未收录');
+    var bkSrc = (q.banks || {}).source;
+    var srcBadges =
+      (q.correction ? '<span class="badge ok2">已核对官方口径</span>' : '') +
+      (bkSrc === 'both' && !q.correction ? '<span class="badge">两库一致</span>' : '') +
+      (bkSrc === 'legacy' && !q.correction
+        ? '<span class="badge conf">' + (q.banks.multiTruncated ? '新库多选不可比对' : '仅旧库来源') + '</span>' : '') +
+      (bkSrc === 'conflict' && !q.correction ? '<span class="badge conf">两库不一致·待裁决</span>' : '') +
+      (bkSrc === 'newbank' ? '<span class="badge self">新库补充题</span>' : '');
+    var corrHtml = q.correction
+      ? '<details class="corr" open><summary>★ 这题已按官方口径核对（原库 key = ' + esc(q.correction.oldKey || '?') +
+        '，现按 ' + esc((q.answerLetters || []).join('')) + '）</summary><div class="dc">' +
+        '<div>' + A.paraLink(q.correction.why) + '</div>' +
+        '<ul class="ev">' + (q.correction.evidence || []).map(function (e) {
+          return '<li><a href="' + e.url + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' +
+            '<div class="q">' + A.linkify(e.quote) + '</div></li>';
+        }).join('') + '</ul>' +
+        (q.altAccepted && q.altAccepted.length
+          ? '<div class="muted">争议题处理：' + esc(q.altAccepted.join('、')) + ' 也算对（旧库口径），考试优先选 ' +
+            esc((q.answerLetters || []).join('')) + '。</div>' : '') +
+        '</div></details>' : '';
     var banksHtml = '<div class="note"><b>两库口径</b><br>' +
       '旧库 key：' + esc(bk.legacy || '—') + '　｜　新库：' + newPart + '<br>' +
       '应用现判定：' + esc((q.answerLetters || []).join('') || q.answerText.slice(0, 30)) + '<br>' +
@@ -900,7 +904,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       A.para(q.raw || '(无)') + '</div></details>';
     var exp = q.explain ? '<details open><summary>题库解析</summary><div class="dc">' + A.para(q.explain) + '</div></details>' : '';
     $('fb').innerHTML = '<div class="fb ' + cls + '"><div class="h">' + head + '</div><div class="b">' +
-      dt + banksHtml + notes + exp + hist + raw + '</div></div>';
+      (srcBadges ? '<div class="row wrap" style="margin-bottom:8px">' + srcBadges + '</div>' : '') +
+      dt + banksHtml + corrHtml + notes + exp + hist + raw + '</div></div>';
   }
 
   function renderSummary() {
@@ -947,7 +952,10 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '<span class="badge">' + tag + '</span></li>';
     }).join('');
     var confs = st.conflicts.map(function (c) {
-      return '<li><span class="id">' + c.id + '</span><span class="t">' + esc(c.note) + '</span>' +
+      /* 没答过就不显示口径说明（否则等于提前给答案） */
+      var done = (records[c.id] || {}).seen > 0;
+      var txt = done ? c.note : '（答完这道题后才会显示官方口径说明）';
+      return '<li><span class="id">' + c.id + '</span><span class="t">' + esc(txt) + '</span>' +
         '<span class="badge">' + (c.ok ? '已连对' : '待消化') + '</span></li>';
     }).join('');
     $('main').innerHTML =
