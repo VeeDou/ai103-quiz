@@ -286,10 +286,13 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   function pool(bank, records, mode, opts) {
     opts = opts || {};
     var dom = opts.domain || null;
+    var t = today();
     var list = bank.questions.filter(function (q) {
       if (dom && q.domain !== dom) return false;
       var r = records[q.id];
       switch (mode) {
+        case 'memory': /* 未掌握的都要练；已掌握的只在到期时回来复习 */
+          return !mastered(r) || !r.seen || (r.due && r.due <= t);
         case 'wrong': return !!r && (r.lapses > 0 || r.last === 'wrong' || r.last === 'partial' || r.unsure);
         case 'unsure': return !!r && r.unsure;
         case 'unmastered': return !mastered(r);
@@ -297,7 +300,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         case 'star': return !!r && r.star;
         case 'conflict': return (q.flags || []).indexOf('conflict') >= 0;
         case 'selfcheck': return q.type === 'selfcheck';
-        case 'due': return !r || !r.seen || (r.due && r.due <= today());
+        case 'due': return !r || !r.seen || (r.due && r.due <= t);
         default: return true;
       }
     });
