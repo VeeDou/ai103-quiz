@@ -688,7 +688,10 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
           '<span class="badge">' + esc(q.kind || '') + '</span>' +
           (q.type === 'selfcheck' ? '<span class="badge self">自评卡</span>' : '') +
           (q.correction ? '<span class="badge ok2">已核对官方口径</span>' : '') +
-          ((q.flags || []).indexOf('conflict') >= 0 ? '<span class="badge conf">★口径冲突</span>' : '') +
+          (q.banks && q.banks.source === 'both' && !q.correction ? '<span class="badge">两库一致</span>' : '') +
+          (q.banks && q.banks.source === 'legacy' && !q.correction
+            ? '<span class="badge conf">' + (q.banks.multiTruncated ? '新库多选不可比对' : '仅旧库来源') + '</span>' : '') +
+          (q.banks && q.banks.source === 'newbank' ? '<span class="badge self">新库补充题</span>' : '') +
           '<span class="badge">' + (view.qi + 1) + '/' + view.queue.length + '</span>' +
           (r.star ? '<span class="badge" style="color:var(--star)">★</span>' : '') +
         '</div>' +
@@ -875,6 +878,20 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       notes += '<div class="note warn"><b>★ 口径冲突</b><br>旧库/新库：' + esc(conf.legacy) + '<br>现在判定：' +
         esc(conf['new']) + '<br>' + A.linkify(conf.note) + '</div>';
     }
+    var bk = q.banks || {};
+    var srcText = { official: '已按官方文档核对（见上方更正说明）', both: '旧库与新库两套题库一致',
+                    conflict: '两库不一致（待裁决）', legacy: (bk.multiTruncated
+                      ? '仅旧库单一来源；新库对多选题只存了首字母，无法比对'
+                      : '仅旧库单一来源（新库未收录此题），未经官方复核'),
+                    newbank: '新库补充题（旧库无此题）' }[bk.source] || '—';
+    var newPart = (bk.newNum
+      ? '新库第 ' + bk.newNum + ' 题' + (bk.new ? '，其 key = ' + esc(bk.new) : '，其答案字段不可用') +
+        (bk.sim ? '（同题相似度 ' + bk.sim + '）' : '')
+      : '新库未收录');
+    var banksHtml = '<div class="note"><b>两库口径</b><br>' +
+      '旧库 key：' + esc(bk.legacy || '—') + '　｜　新库：' + newPart + '<br>' +
+      '应用现判定：' + esc((q.answerLetters || []).join('') || q.answerText.slice(0, 30)) + '<br>' +
+      '来源：' + esc(srcText) + '</div>';
     var hist = '<div class="muted">历史：做过 ' + (r.seen || 0) + ' 次｜连对 ' + (r.streak || 0) +
       '｜累计错 ' + (r.lapses || 0) + '｜' + (r.unsure ? '有未消化的「蒙」' : '无蒙标记') +
       (r.verdictText ? '｜上次判定：' + esc(r.verdictText) : '') +
@@ -883,7 +900,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       A.para(q.raw || '(无)') + '</div></details>';
     var exp = q.explain ? '<details open><summary>题库解析</summary><div class="dc">' + A.para(q.explain) + '</div></details>' : '';
     $('fb').innerHTML = '<div class="fb ' + cls + '"><div class="h">' + head + '</div><div class="b">' +
-      dt + notes + exp + hist + raw + '</div></div>';
+      dt + banksHtml + notes + exp + hist + raw + '</div></div>';
   }
 
   function renderSummary() {
@@ -947,6 +964,21 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
           '<span class="badge">自评卡 ' + st.selfcheck + '</span>' +
         '</div>' +
         '<div class="muted" style="margin-top:10px">掌握判据：同一题连续 2 次答对、且没有未消化的「蒙」标记。判据写进应用规则：蒙对＝错题。</div>' +
+      '</div>' +
+      '<div class="card"><h2>答案来源分布（两套题库口径）</h2>' +
+        (function () {
+          var ks = BANK.meta.keySources || {};
+          var multi = BANK.questions.filter(function (x) { return x.banks && x.banks.multiTruncated; }).length;
+          return '<div class="muted">' +
+            '已按官方文档核对：<b>' + (ks.official || 0) + '</b> 题（题面带「已核对官方口径」，可展开官方链接）<br>' +
+            '旧库与新库一致：<b>' + (ks.both || 0) + '</b> 题<br>' +
+            '仅旧库单一来源：<b>' + (ks.legacy || 0) + '</b> 题' +
+            (multi ? '（其中 ' + multi + ' 题是多选，新库只存首字母、无法比对）' : '') + '<br>' +
+            '新库补充题：<b>' + (ks.n_a || 0) + '</b> 题<br>' +
+            '尚存两库冲突：<b>' + (ks.conflict || 0) + '</b> 题</div>' +
+            '<div class="muted" style="margin-top:8px">判定优先级：官方文档 &gt; 两库一致 &gt; 旧库单一来源。' +
+            '「仅旧库单一来源」不等于错，只是没有第二方证据；课堂/考场遇到疑点按官方文档走。</div>';
+        })() +
       '</div>' +
       '<div class="card"><h2>分域进度</h2>' + doms + '</div>' +
       '<div class="card"><h2>★ 存疑题（考试按官方口径记）</h2><ul class="list">' + (confs || '<li>无</li>') + '</ul></div>' +
