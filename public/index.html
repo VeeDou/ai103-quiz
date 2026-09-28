@@ -131,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"f9baed9fd2","at":"2026-09-28 13:32","bank":"2026-09-28 21:32"};</script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"4c2975c00e","at":"2026-09-28 14:07","bank":"2026-09-28 22:07"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -287,6 +287,12 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     return (rec.streak || 0) >= MASTER_STREAK && !rec.unsure;
   }
 
+  /* 退役：连对 N 次后不再出现在记忆队列（N<=0 表示不退役） */
+  function retired(rec, n) {
+    if (!rec || !n || n <= 0) return false;
+    return (rec.streak || 0) >= n;
+  }
+
   function isWeak(rec) {
     if (!rec || !rec.seen) return false;
     return rec.last === 'wrong' || rec.last === 'partial' || rec.unsure || (rec.streak || 0) < MASTER_STREAK;
@@ -307,10 +313,15 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     opts = opts || {};
     var dom = opts.domain || null;
     var t = today();
+    var RET = opts.retire === undefined ? 3 : opts.retire;   /* 连对 N 次 → 退役 */
     var list = bank.questions.filter(function (q) {
       if (dom && q.domain !== dom) return false;
       var r = records[q.id];
+      if ((mode === 'memory' || mode === 'unmastered' || mode === 'halfway' || mode === 'unseen') && retired(r, RET)) {
+        return false;                       /* 已退役：记忆类队列不再出现 */
+      }
       switch (mode) {
+        case 'retired': return retired(r, RET);
         case 'memory': /* 未掌握的都要练；已掌握的只在到期时回来复习 */
           return !mastered(r) || !r.seen || (r.due && r.due <= t);
         case 'wrong': return !!r && (r.lapses > 0 || r.last === 'wrong' || r.last === 'partial' || r.unsure);
@@ -371,11 +382,13 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   }
 
   /* ------------------------------------------------------------ 统计 / 就绪度 */
-  function stats(bank, records) {
+  function stats(bank, records, opts) {
+    opts = opts || {};
+    var RET = opts.retire === undefined ? 3 : opts.retire;
     var s = {
       total: bank.questions.length, seen: 0, mastered: 0, wrong: 0, partial: 0,
       unsure: 0, unseen: 0, selfcheck: 0, conflicts: [], byDomain: {}, weakList: [],
-      halfway: 0, notYet: 0
+      halfway: 0, notYet: 0, retired: 0, retireN: RET
     };
     bank.questions.forEach(function (q) {
       var r = records[q.id];
@@ -396,7 +409,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       if ((q.flags || []).indexOf('conflict') >= 0) {
         s.conflicts.push({ id: q.id, ok: mastered(r), note: (bank.conflicts.filter(function (c) { return 'Q' + c.q === q.id; })[0] || {}).note || '' });
       }
-      if (isWeak(r)) s.weakList.push(q.id);
+      if (retired(r, RET)) s.retired++;
+      if (isWeak(r) && !retired(r, RET)) s.weakList.push(q.id);
     });
     s.masteryRate = s.total ? s.mastered / s.total : 0;
     s.ready = s.mastered === s.total ? 'ready' : (s.masteryRate >= 0.85 ? 'almost' : 'not-ready');
@@ -462,7 +476,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   root.A103 = {
     norm: norm, normExact: normExact, same: same, candHit: candHit, grade: grade,
     applyResult: applyResult, newRecord: newRecord,
-    mastered: mastered, isWeak: isWeak, buildQueue: buildQueue, stats: stats, seedRecords: seedRecords,
+    mastered: mastered, isWeak: isWeak, retired: retired, buildQueue: buildQueue, stats: stats,
+    seedRecords: seedRecords,
     today: today, shuffle: shuffle, esc: esc, md: md, para: para, linkify: linkify, paraLink: paraLink,
     INTERVALS: INTERVALS, MASTER_STREAK: MASTER_STREAK
   };
@@ -474,7 +489,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   'use strict';
   var A = window.A103;
   var LS = { rec: 'ai103.records.v1', set: 'ai103.settings.v1', pass: 'ai103.pass.v1', seed: 'ai103.seeded.v1' };
-  var BANK = null, S = load(LS.set, { limit: 20, shuffle: false, showRaw: false });
+  var BANK = null, S = load(LS.set, { limit: 20, shuffle: false, showRaw: false, retire: 3 });
+  if (S.retire === undefined) S.retire = 3;   /* 连对 N 次后从记忆队列退役；0 = 不退役 */
   var records = load(LS.rec, {});
   var view = { tab: 'home', queue: [], qi: 0, ans: null, graded: null, unsure: false, session: null, notesQuery: '' };
 
@@ -580,8 +596,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   function home() { view.tab = 'home'; view.queue = []; render(); }
 
   function renderHome() {
-    var st = A.stats(BANK, records);
-    var due = A.buildQueue(BANK, records, 'memory', { limit: 999 }).length;
+    var st = A.stats(BANK, records, { retire: S.retire });
+    var due = A.buildQueue(BANK, records, 'memory', { limit: 999, retire: S.retire }).length;
     var wrongN = A.buildQueue(BANK, records, 'wrong', {}).length;
     var pct = Math.round(st.masteryRate * 100);
     var readyTxt = st.ready === 'ready' ? ['可以去考', 'var(--ok)'] :
@@ -598,6 +614,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
           '<div class="stat"><b>' + st.notYet + '</b><span>还没连对过 / 有蒙标记</span></div>' +
           '<div class="stat"><b>' + st.unseen + '</b><span>还没做过</span></div>' +
         '</div>' +
+        (S.retire > 0 ? '<div class="muted" style="margin-top:8px">🎓 已退役（连对 ' + S.retire +
+          ' 次以上，不再进记忆队列）：<b>' + st.retired + '</b> 题</div>' : '') +
         '<div class="note" style="margin-top:12px"><b>为什么答对了很多题，掌握还是 0？</b><br>' +
           '掌握判据是<b>同一题连续 2 次答对</b>（单次答对只算「连对 1 次」，因为仓库规则要求"蒙对＝错题、一次答对不算会"）。' +
           '所以你刚答对的那些题现在都在中间那格 <b>' + st.halfway + '</b> 里——<b>再答对一次就变成已掌握</b>。</div>' +
@@ -617,6 +635,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
           '<button class="btn sm" id="goConflict">★存疑题（' + st.conflicts.length + '）</button>' +
           '<button class="btn sm" id="goSelf">自评卡（' + st.selfcheck + '）</button>' +
           '<button class="btn sm" id="goStar">我收藏的</button>' +
+          (S.retire > 0 && st.retired ? '<button class="btn sm" id="goRetired">已退役（' + st.retired + '）</button>' : '') +
         '</div>' +
         '<div class="muted" style="margin-top:10px">按域刷：</div>' +
         '<div class="grid2" style="margin-top:6px">' +
@@ -636,6 +655,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     $('goConflict').onclick = function () { startQueue('conflict'); };
     $('goSelf').onclick = function () { startQueue('selfcheck'); };
     $('goStar').onclick = function () { startQueue('star'); };
+    if ($('goRetired')) $('goRetired').onclick = function () { startQueue('retired', { limit: 999 }); };
     $('main').querySelectorAll('[data-dom]').forEach(function (b) {
       b.onclick = function () { startQueue('all', { domain: b.dataset.dom }); };
     });
@@ -656,7 +676,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
 
   /* ---------------------------------------------------- 刷题 */
   function startQueue(mode, opts) {
-    var list = A.buildQueue(BANK, records, mode, Object.assign({ limit: mode === 'all' ? 999 : S.limit, seed: Date.now() }, opts || {}));
+    var list = A.buildQueue(BANK, records, mode, Object.assign({ limit: mode === 'all' ? 999 : S.limit, seed: Date.now(), retire: S.retire }, opts || {}));
     if (!list.length) { alert('这个队列现在是空的 👍'); return; }
     view.queue = list; view.qi = 0;
     view.session = { mode: mode, done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
@@ -930,6 +950,11 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       '应用现判定：' + esc((q.answerLetters || []).join('') || q.answerText.slice(0, 30)) + '<br>' +
       '来源：' + esc(srcText) + '</div>';
     var mNow = A.mastered(r);
+    var isRetired = A.retired(r, S.retire);
+    var retireHtml = isRetired
+      ? '<div class="note" style="border-left-color:var(--ok)">🎓 <b>本题已退役</b>：已连对 ' + (r.streak || 0) +
+        ' 次 ≥ 阈值 ' + S.retire + ' 次，<b>不再出现在记忆队列</b>；' +
+        '「随机 20 题 / 按域刷 / 全部」仍会抽到它，万一手滑答错会自动回到队列。</div>' : '';
     var progHtml = '<div class="note" style="border-left-color:' + (mNow ? 'var(--ok)' : 'var(--warn)') + '">' +
       (mNow ? '✅ 本题已掌握（连对 ' + (r.streak || 0) + ' 次）'
             : '⏳ 本题连对 ' + (r.streak || 0) + '/' + A.MASTER_STREAK + '：<b>再答对一次就算掌握</b>' +
@@ -943,7 +968,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var exp = q.explain ? '<details open><summary>题库解析</summary><div class="dc">' + A.para(q.explain) + '</div></details>' : '';
     $('fb').innerHTML = '<div class="fb ' + cls + '"><div class="h">' + head + '</div><div class="b">' +
       (srcBadges ? '<div class="row wrap" style="margin-bottom:8px">' + srcBadges + '</div>' : '') +
-      progHtml + dt + banksHtml + corrHtml + notes + exp + hist + raw + '</div></div>';
+      progHtml + retireHtml + dt + banksHtml + corrHtml + notes + exp + hist + raw + '</div></div>';
   }
 
   function renderSummary() {
@@ -978,7 +1003,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
 
   /* ---------------------------------------------------- 就绪度 */
   function renderStats() {
-    var st = A.stats(BANK, records);
+    var st = A.stats(BANK, records, { retire: S.retire });
     var doms = ['P1', 'P2', 'P3', 'P4', 'P5'].map(function (d) {
       var x = st.byDomain[d] || { total: 0, mastered: 0 };
       var p = x.total ? Math.round(x.mastered / x.total * 100) : 0;
@@ -1007,7 +1032,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
           '<div class="stat"><b>' + st.notYet + '</b><span>未连对/有蒙</span></div>' +
           '<div class="stat"><b>' + st.unseen + '</b><span>没做过</span></div>' +
         '</div>' +
+        '<div class="muted" style="margin-top:8px">🎓 已退役（连对 ≥' + (S.retire || 0) + ' 次，不进记忆队列）：<b>' + st.retired + '</b> 题</div>' +
         '<button class="btn block sm" id="goHalf3">⚡ 刷「差一次」的 ' + st.halfway + ' 题</button>' +
+        (S.retire > 0 && st.retired ? '<button class="btn block sm" id="goRetired2">查看已退役的 ' + st.retired + ' 题</button>' : '') +
         '<div class="row wrap" style="margin-top:10px">' +
           '<span class="badge" style="color:var(--bad)">上次答错 ' + st.wrong + '</span>' +
           '<span class="badge" style="color:var(--warn)">半对 ' + st.partial + '</span>' +
@@ -1037,6 +1064,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '<button class="btn block sm" id="drill">刷这些题</button></div>';
     $('drill').onclick = function () { startQueue('unmastered'); };
     if ($('goHalf3')) $('goHalf3').onclick = function () { startQueue('halfway', { limit: 999 }); };
+    if ($('goRetired2')) $('goRetired2').onclick = function () { startQueue('retired', { limit: 999 }); };
   }
 
   /* ---------------------------------------------------- 笔记 */
@@ -1068,7 +1096,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
 
   /* ---------------------------------------------------- 数据 */
   function renderData() {
-    var st = A.stats(BANK, records);
+    var st = A.stats(BANK, records, { retire: S.retire });
     $('main').innerHTML =
       '<div class="card"><h2>本机进度</h2>' +
         '<div class="muted">题库 ' + BANK.meta.total + ' 题（旧库 ' + BANK.meta.legacy + ' + 新库补充 ' + BANK.meta['new'] + '）<br>' +
@@ -1083,6 +1111,15 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '<div class="grid3" style="margin:8px 0">' +
           [10, 14, 20, 30, 50].map(function (n) { return '<button class="btn sm" data-lim="' + n + '">' + n + '</button>'; }).join('') +
         '</div>' +
+        '<div class="row" style="justify-content:space-between;margin-top:10px"><span>连对几次后不再出现</span>' +
+          '<span class="muted">' + (S.retire > 0 ? '连对 ' + S.retire + ' 次退役' : '不退役') + '</span></div>' +
+        '<div class="grid2" style="margin:8px 0">' +
+          ['<button class="btn sm" data-ret="3">连对 3 次</button>',
+           '<button class="btn sm" data-ret="4">连对 4 次</button>',
+           '<button class="btn sm" data-ret="5">连对 5 次</button>',
+           '<button class="btn sm" data-ret="0">永不退役</button>'].join('') +
+        '</div>' +
+        '<div class="hint" style="margin-bottom:10px">退役只影响「记忆队列 / 未掌握 / 差一次」；随机 20 题、按域刷、全部仍会抽到，避免真的忘光。答错会自动解除退役。</div>' +
         '<button class="btn block sm" id="clearPass">清除已存口令（下次重新输入）</button>' +
         '<button class="btn block sm" id="reset">清空所有作答记录</button>' +
         '<div class="hint">清空后不可恢复，请先导出备份。</div>' +
@@ -1139,6 +1176,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     };
     $('main').querySelectorAll('[data-lim]').forEach(function (b) {
       b.onclick = function () { S.limit = +b.dataset.lim; save(LS.set, S); renderData(); };
+    });
+    $('main').querySelectorAll('[data-ret]').forEach(function (b) {
+      b.onclick = function () { S.retire = +b.dataset.ret; save(LS.set, S); renderData(); };
     });
   }
 

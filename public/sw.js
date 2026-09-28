@@ -1,8 +1,8 @@
-/* AI-103 刷题 · Service Worker f9baed9fd2
+/* AI-103 刷题 · Service Worker 4c2975c00e
  * 策略：HTML/题库「网络优先 + 4 秒超时回退缓存」——保证每次打开都拿到最新版本，断网时仍可用。
  *     其他静态资源走缓存优先。
  */
-const C = 'ai103-f9baed9fd2';
+const C = 'ai103-4c2975c00e';
 const F = ['./', './index.html', './bank.enc.js'];
 const NET = ['/', '/index.html', '/bank.enc.js'];
 
