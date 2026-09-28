@@ -131,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"4c2975c00e","at":"2026-09-28 14:07","bank":"2026-09-28 22:07"};</script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"44d5043b4e","at":"2026-09-28 14:08","bank":"2026-09-28 22:08"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -199,8 +199,13 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         }
       }
       partial = !ok && hit > 0;
+      var optText = {};
+      (q.options || []).forEach(function (o) { optText[o.k] = (o.zh || o.t); });
+      var show = function (ks) {
+        return ks.map(function (k) { return optText[k] || k; }).join('；') || '（未选）';
+      };
       detail.push({
-        label: '选项', ok: ok, mine: mine.join('、') || '（未选）', key: key.join('、'),
+        label: '选项', ok: ok, mine: show(mine), key: show(key),
         partial: partial, alt: alt
       });
     } else if (q.type === 'blanks') {
@@ -489,8 +494,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   'use strict';
   var A = window.A103;
   var LS = { rec: 'ai103.records.v1', set: 'ai103.settings.v1', pass: 'ai103.pass.v1', seed: 'ai103.seeded.v1' };
-  var BANK = null, S = load(LS.set, { limit: 20, shuffle: false, showRaw: false, retire: 3 });
+  var BANK = null, S = load(LS.set, { limit: 20, shuffle: true, showRaw: false, retire: 3 });
   if (S.retire === undefined) S.retire = 3;   /* 连对 N 次后从记忆队列退役；0 = 不退役 */
+  if (S.shuffle === undefined) S.shuffle = true;  /* 打乱选项/候选顺序（防记位置） */
   var records = load(LS.rec, {});
   var view = { tab: 'home', queue: [], qi: 0, ans: null, graded: null, unsure: false, session: null, notesQuery: '' };
 
@@ -709,6 +715,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var q = view.queue[view.qi];
     if (!q) return renderSummary();
     view.ans = blankAns(q); view.graded = null; view.unsure = false;
+    view.rnd = Math.floor(Math.random() * 1000000000) + 1;
+    view.disp = buildDisp(q, view.rnd);
     var r = records[q.id] || {};
     var caseHtml = q.caseRef && BANK.cases[q.caseRef]
       ? '<details><summary>案例背景（' + esc(BANK.cases[q.caseRef].title) + '）</summary><div class="dc">' + A.para(BANK.cases[q.caseRef].text) + '</div></details>' : '';
@@ -741,6 +749,24 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     renderBar(q);
   }
 
+  /* 每次进题重新打乱展示顺序（选项/下拉候选/排序候选池），判分仍按原始 key */
+  function buildDisp(q, rnd) {
+    var on = S.shuffle !== false;
+    if (q.type === 'single' || q.type === 'multi') {
+      var opts = (q.options || []).map(function (o) { return { k: o.k, t: (o.zh || o.t) }; });
+      return { opts: on ? A.shuffle(opts, rnd) : opts };
+    }
+    if (q.type === 'blanks') {
+      return { blanks: (q.blanks || []).map(function (b) {
+        return { label: b.label, cands: on ? A.shuffle(b.cands, rnd) : b.cands };
+      }) };
+    }
+    if (q.type === 'order') {
+      return { pool: on ? A.shuffle(q.pool, rnd) : q.pool };
+    }
+    return {};
+  }
+
   function domainName(d) {
     var m = { P1: '规划', P2: '生成式/代理', P3: '视觉', P4: '文本', P5: '信息提取' };
     return m[d] || '';
@@ -757,9 +783,10 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   function renderArea(q) {
     var el = $('area'), h = '';
     if (q.type === 'single' || q.type === 'multi') {
-      h = (q.options || []).map(function (o) {
-        return '<button class="opt" data-k="' + o.k + '"><span class="k">' + o.k + '</span><span>' +
-          esc(o.zh || o.t) + '</span></button>';
+      h = ((view.disp && view.disp.opts) || []).map(function (o, i) {
+        var letter = String.fromCharCode(65 + i);   /* 打乱后重新标 A/B/C/D */
+        return '<button class="opt" data-k="' + o.k + '"><span class="k">' + letter + '</span><span>' +
+          esc(o.t) + '</span></button>';
       }).join('');
       el.innerHTML = h;
       el.querySelectorAll('.opt').forEach(function (b) {
@@ -778,7 +805,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         };
       });
     } else if (q.type === 'blanks') {
-      el.innerHTML = (q.blanks || []).map(function (b, i) {
+      el.innerHTML = ((view.disp && view.disp.blanks) || []).map(function (b, i) {
         return '<div class="blank"><div class="lab">' + esc(b.label) + '</div>' +
           '<select data-i="' + i + '"><option value="">— 请选择 —</option>' +
           (b.cands || []).map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
@@ -792,7 +819,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         (q.slots || []).map(function (s, i) {
           return '<div class="blank"><div class="lab">第 ' + (i + 1) + ' 步</div>' +
             '<select data-i="' + i + '"><option value="">— 请选择 —</option>' +
-            (q.pool || []).map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+            ((view.disp && view.disp.pool) || q.pool || []).map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
             '</select></div>';
         }).join('');
       el.querySelectorAll('select').forEach(function (sel) {
@@ -1120,6 +1147,13 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
            '<button class="btn sm" data-ret="0">永不退役</button>'].join('') +
         '</div>' +
         '<div class="hint" style="margin-bottom:10px">退役只影响「记忆队列 / 未掌握 / 差一次」；随机 20 题、按域刷、全部仍会抽到，避免真的忘光。答错会自动解除退役。</div>' +
+        '<div class="row" style="justify-content:space-between;margin-top:10px"><span>打乱选项顺序</span>' +
+          '<span class="muted">' + (S.shuffle !== false ? '开（每次进题重新打乱）' : '关（按题库原顺序）') + '</span></div>' +
+        '<div class="grid2" style="margin:8px 0">' +
+          '<button class="btn sm" data-shf="1">开启打乱</button>' +
+          '<button class="btn sm" data-shf="0">关闭打乱</button>' +
+        '</div>' +
+        '<div class="hint" style="margin-bottom:10px">开启后：选择题选项重新标 A/B/C/D、下拉候选与排序候选池也一起打乱，判分仍按内容——避免记住「答案是 C」而不是内容。</div>' +
         '<button class="btn block sm" id="clearPass">清除已存口令（下次重新输入）</button>' +
         '<button class="btn block sm" id="reset">清空所有作答记录</button>' +
         '<div class="hint">清空后不可恢复，请先导出备份。</div>' +
@@ -1179,6 +1213,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     });
     $('main').querySelectorAll('[data-ret]').forEach(function (b) {
       b.onclick = function () { S.retire = +b.dataset.ret; save(LS.set, S); renderData(); };
+    });
+    $('main').querySelectorAll('[data-shf]').forEach(function (b) {
+      b.onclick = function () { S.shuffle = b.dataset.shf === '1'; save(LS.set, S); renderData(); };
     });
   }
 
