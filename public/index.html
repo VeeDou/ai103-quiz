@@ -131,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"fca5237de1","at":"2026-09-27 15:35","bank":"2026-09-27 23:35"};</script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"f9baed9fd2","at":"2026-09-28 13:32","bank":"2026-09-28 21:32"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -435,15 +435,20 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /* 极简 Markdown：**粗体** 与 `代码`（先转义，再替换，保持安全） */
+  function md(s) {
+    return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
+
   function para(text) {
-    return esc(text).split(/\n{2,}/).map(function (p) {
+    return md(text).split(/\n{2,}/).map(function (p) {
       return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
     }).join('');
   }
 
   /* 把正文里的 http(s) 链接变成可点的 <a>（先转义再替换，避免 XSS） */
   function linkify(text) {
-    return esc(text).replace(/(https?:\/\/[^\s<>"）)】]+)/g, function (u) {
+    return md(text).replace(/(https?:\/\/[^\s<>"）)】]+)/g, function (u) {
       return '<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + u + '</a>';
     });
   }
@@ -458,7 +463,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     norm: norm, normExact: normExact, same: same, candHit: candHit, grade: grade,
     applyResult: applyResult, newRecord: newRecord,
     mastered: mastered, isWeak: isWeak, buildQueue: buildQueue, stats: stats, seedRecords: seedRecords,
-    today: today, shuffle: shuffle, esc: esc, para: para, linkify: linkify, paraLink: paraLink,
+    today: today, shuffle: shuffle, esc: esc, md: md, para: para, linkify: linkify, paraLink: paraLink,
     INTERVALS: INTERVALS, MASTER_STREAK: MASTER_STREAK
   };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -688,6 +693,14 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var caseHtml = q.caseRef && BANK.cases[q.caseRef]
       ? '<details><summary>案例背景（' + esc(BANK.cases[q.caseRef].title) + '）</summary><div class="dc">' + A.para(BANK.cases[q.caseRef].text) + '</div></details>' : '';
     /* 答题前不显示任何来源标签/更正说明（会暗示答案）；这些一律放到答完之后 */
+    var stemHtml = q.zhStem ? A.para(q.zhStem) : A.para(q.stem);
+    var enFold = '';
+    if (q.zhStem) {
+      var enOpts = (q.options || []).map(function (o) { return esc(o.k) + '. ' + esc(o.t); }).join('<br>');
+      enFold = '<details><summary>英文原文（对照用）</summary><div class="dc">' + A.para(q.stem) +
+        (enOpts ? '<div style="margin-top:8px">' + enOpts + '</div>' : '') + '</div></details>';
+    }
+    var warnHtml = q.zhWarn ? '<div class="note warn">⚠ ' + esc(q.zhWarn) + '</div>' : '';
     $('main').innerHTML =
       '<div class="card" id="qcard" data-qid="' + q.id + '">' +
         '<div class="row wrap" style="margin-bottom:8px">' +
@@ -697,8 +710,9 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
           '<span class="badge">' + (view.qi + 1) + '/' + view.queue.length + '</span>' +
           (r.star ? '<span class="badge" style="color:var(--star)">★</span>' : '') +
         '</div>' +
-        caseHtml +
-        '<div class="qstem" id="stem">' + A.para(q.stem) + '</div>' +
+        caseHtml + warnHtml +
+        '<div class="qstem" id="stem">' + stemHtml + '</div>' +
+        enFold +
         '<div id="area"></div>' +
         '<div id="fb"></div>' +
       '</div>' +
@@ -724,7 +738,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var el = $('area'), h = '';
     if (q.type === 'single' || q.type === 'multi') {
       h = (q.options || []).map(function (o) {
-        return '<button class="opt" data-k="' + o.k + '"><span class="k">' + o.k + '</span><span>' + esc(o.t) + '</span></button>';
+        return '<button class="opt" data-k="' + o.k + '"><span class="k">' + o.k + '</span><span>' +
+          esc(o.zh || o.t) + '</span></button>';
       }).join('');
       el.innerHTML = h;
       el.querySelectorAll('.opt').forEach(function (b) {
