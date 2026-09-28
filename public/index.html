@@ -131,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"44d5043b4e","at":"2026-09-28 14:08","bank":"2026-09-28 22:08"};</script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"b926b71f40","at":"2026-09-28 14:28","bank":"2026-09-28 22:28"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -772,6 +772,16 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     return m[d] || '';
   }
 
+  /* 现判定的可读摘要（下拉/排序/是非题不能直接截 answerText） */
+  function verdictSummary(q) {
+    if (q.type === 'blanks') return (q.blanks || []).map(function (b) { return b.label + ' → ' + b.key; }).join('；');
+    if (q.type === 'order') return (q.order || []).map(function (o, i) { return '第' + (i + 1) + '步 → ' + o.text; }).join('；');
+    if (q.type === 'yesno') return (q.statements || []).map(function (s, i) { return '第' + (i + 1) + '项 → ' + (s.key ? '是' : '否'); }).join('；');
+    if (q.type === 'selfcheck') return q.answerText || '';
+    var ls = (q.answerLetters || []).join('、');
+    return ls || q.answerText || '';
+  }
+
   function blankAns(q) {
     if (q.type === 'blanks') return { blanks: (q.blanks || []).map(function () { return ''; }) };
     if (q.type === 'order') return { order: (q.order || []).map(function () { return ''; }) };
@@ -974,7 +984,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         '</div></details>' : '';
     var banksHtml = '<div class="note"><b>两库口径</b><br>' +
       '旧库 key：' + esc(bk.legacy || '—') + '　｜　新库：' + newPart + '<br>' +
-      '应用现判定：' + esc((q.answerLetters || []).join('') || q.answerText.slice(0, 30)) + '<br>' +
+      '应用现判定：' + esc(verdictSummary(q)) + '<br>' +
       '来源：' + esc(srcText) + '</div>';
     var mNow = A.mastered(r);
     var isRetired = A.retired(r, S.retire);
