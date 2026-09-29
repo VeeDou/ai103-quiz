@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b0f17">
+<meta name="robots" content="noindex, nofollow">
+<title>AI-103 刷题</title>
+<style>
+:root{
+  --bg:#0b0f17; --card:#151b26; --card2:#1d2534; --line:#2a3446; --txt:#e8edf6; --dim:#93a1b8;
+  --ok:#31c48d; --bad:#f0616d; --warn:#f5b544; --acc:#5b9dff; --star:#ffcf4d;
+  --r:14px; --pad:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+a{color:var(--acc)}
+.wrap{max-width:720px;margin:0 auto;padding:0 var(--pad)}
+header.top{position:sticky;top:0;z-index:20;background:rgba(11,15,23,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 0 10px}
+header.top .wrap{display:flex;align-items:center;gap:10px}
+header.top h1{font-size:17px;margin:0;flex:1;font-weight:600}
+.pill{font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:var(--pad);margin:12px 0}
+.card h2{font-size:15px;margin:0 0 10px;font-weight:600;color:var(--dim);letter-spacing:.02em}
+.row{display:flex;gap:10px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--card2);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:22px;line-height:1.2}
+.stat span{font-size:12px;color:var(--dim)}
+button,.btn{font:inherit;color:var(--txt);background:var(--card2);border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;cursor:pointer;text-align:center}
+button:active{transform:scale(.985)}
+.btn.primary{background:linear-gradient(180deg,#3d7ff0,#2f66c9);border-color:#3d7ff0;font-weight:600}
+.btn.ghost{background:transparent}
+.btn.sm{padding:9px 12px;font-size:14px}
+.btn.block{display:block;width:100%;margin:8px 0}
+.btn[disabled]{opacity:.45}
+.bar{height:8px;background:#222c3d;border-radius:6px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#31c48d,#5b9dff)}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim);margin-right:6px}
+.badge.p1{color:#8ab4ff;border-color:#33507f}.badge.p2{color:#7ee0b8;border-color:#2c5c4b}
+.badge.p3{color:#ffc98a;border-color:#6b4f2a}.badge.p4{color:#d4a6ff;border-color:#523a75}
+.badge.p5{color:#7fd7ff;border-color:#2c566b}
+.badge.conf{color:var(--warn);border-color:#6b552a;background:#2a2415}
+.badge.self{color:var(--dim);border-color:#4a4a4a;background:#20242c}
+.qstem{font-size:17px;line-height:1.6}
+.qstem p{margin:.5em 0}
+.opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;margin:8px 0;padding:13px;
+  background:var(--card2);border:1px solid var(--line);border-radius:12px;line-height:1.5}
+.opt .k{flex:0 0 22px;font-weight:700;color:var(--dim)}
+.opt.sel{border-color:var(--acc);background:#1b2740}
+.opt.right{border-color:var(--ok);background:#14301f}
+.opt.wrong{border-color:var(--bad);background:#331a1e}
+select{width:100%;font:inherit;color:var(--txt);background:var(--card2);border:1px solid var(--line);
+  border-radius:10px;padding:11px;margin:4px 0 12px;appearance:none}
+select.right{border-color:var(--ok)}select.wrong{border-color:var(--bad)}
+.blank{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px}
+.blank .lab{font-size:13px;color:var(--dim);margin-bottom:2px}
+.yn{display:flex;gap:8px;margin:8px 0}
+.yn button{flex:1;padding:10px}
+.yn button.sel{background:#1b2740;border-color:var(--acc)}
+.yn button.right{background:#14301f;border-color:var(--ok)}
+.yn button.wrong{background:#331a1e;border-color:var(--bad)}
+.fb{margin-top:12px;border-radius:var(--r);border:1px solid var(--line);overflow:hidden}
+.fb .h{padding:10px 12px;font-weight:600}
+.fb.ok .h{background:#14301f;color:#8ff0c0}
+.fb.part .h{background:#2f2a12;color:#ffd88a}
+.fb.bad .h{background:#331a1e;color:#ff9aa4}
+.fb .b{padding:12px;background:var(--card)}
+table.dt{width:100%;border-collapse:collapse;font-size:14px}
+table.dt td,table.dt th{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+table.dt th{color:var(--dim);font-weight:500;font-size:12px}
+td.ok{color:var(--ok)}td.bad{color:var(--bad)}
+details{margin:8px 0;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card2)}
+details summary{cursor:pointer;font-size:14px;color:var(--dim)}
+details .dc{padding-top:8px;font-size:14px;line-height:1.6;color:#cfd8e8}
+.note{border-left:3px solid var(--acc);padding:6px 10px;margin:8px 0;background:#141c2b;border-radius:0 8px 8px 0;font-size:14px}
+.note b{color:#cfe0ff}
+.note.warn{border-color:var(--warn);background:#241f12}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(15,20,29,.96);
+  border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(8px)}
+nav.tabs button{flex:1;background:none;border:0;border-radius:0;padding:10px 4px;font-size:12px;color:var(--dim)}
+nav.tabs button.on{color:var(--acc)}
+nav.tabs button b{display:block;font-size:19px;font-weight:400;line-height:1.25}
+.barwrap{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom));background:var(--bg);padding:8px 0;z-index:15}
+.qbar{display:flex;gap:8px}
+.qbar button{flex:1}
+.muted{color:var(--dim);font-size:13px}
+.list{margin:0;padding:0;list-style:none}
+.list li{padding:9px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.list li:last-child{border-bottom:0}
+.list .id{font-weight:600;color:var(--acc);min-width:52px}
+.list .t{flex:1;font-size:14px;color:#cfd8e8}
+input[type=text],input[type=password],input[type=search]{width:100%;font:inherit;color:var(--txt);
+  background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.hint{font-size:12px;color:var(--dim);margin-top:6px}
+.badge.ok2{color:#8ff0c0;border-color:#2c5c4b;background:#12271c}
+details.corr{border-color:#2c5c4b;background:#111f19}
+details.corr summary{color:#8ff0c0}
+ul.ev{margin:6px 0 0;padding-left:18px}
+ul.ev li{margin:8px 0;font-size:13px}
+ul.ev .q{color:var(--dim);font-size:12px;margin-top:2px}
+.spin{text-align:center;padding:40px 0;color:var(--dim)}
+.hide{display:none!important}
+code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <h1 id="title">AI-103 刷题</h1>
+  <span class="pill" id="examPill">考试 09-29</span>
+  <span class="pill" id="verPill" title="构建版本">v…</span>
+</div></header>
+
+<main class="wrap" id="main">
+  <div class="spin" id="boot">正在解锁题库…</div>
+</main>
+
+<nav class="tabs hide" id="tabs">
+  <button data-tab="home" class="on"><b>◆</b>刷题</button>
+  <button data-tab="stats"><b>▤</b>就绪度</button>
+  <button data-tab="notes"><b>✎</b>笔记</button>
+  <button data-tab="data"><b>⛁</b>数据</button>
+</nav>
+
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"9880e47fe5","at":"2026-09-29 03:23","bank":"2026-09-29 11:23"};</script>
+<script>
+/* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
+ * 依赖：无。挂载到 globalThis.A103
+ */
+(function (root) {
+  'use strict';
+
+  var DAY = 86400000;
+  /* Leitner 盒 → 下次复习间隔（天）：答错回 0，答对递增 */
+  var INTERVALS = [0, 1, 3, 6, 10, 14];
+  var MASTER_STREAK = 2;
+
+  function norm(s) {
+    if (s === null || s === undefined) return '';
+    s = String(s);
+    s = s.replace(/[（(][^（()）]*[）)]/g, function (m) {
+      return /[A-Za-z]{6,}/.test(m) ? '' : m;
+    });
+    s = s.replace(/[\s\u3000]+/g, '');
+    s = s.replace(/：/g, ':');
+    s = s.replace(/^[。.、,，;；:'"]+|[。.、,，;；:'"]+$/g, '');
+    return s.toLowerCase();
+  }
+
+  function candHit(val, cands) {
+    var nv = norm(val);
+    if (!nv) return false;
+    for (var i = 0; i < cands.length; i++) {
+      var nc = norm(cands[i]);
+      if (!nc) continue;
+      if (nc === nv || nc.indexOf(nv) === 0 || nv.indexOf(nc) === 0) return true;
+    }
+    return false;
+  }
+
+  /* 机判用的严格归一：只统一空白与标点，不删括号内容（题库构建时已把 key 规范成候选原文） */
+  function normExact(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/：/g, ':').replace(/[\s\u3000]+/g, '')
+      .replace(/^[。.、,，;；:]+|[。.、,，;；:]+$/g, '').toLowerCase();
+  }
+  function same(a, b) { return !!a && normExact(a) === normExact(b); }
+
+  function today(ts) {
+    var d = new Date(ts === undefined ? Date.now() : ts);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* ------------------------------------------------------------ 判分 */
+  function grade(q, ans) {
+    ans = ans || {};
+    var detail = [], total = 0, hit = 0, ok = false, partial = false, alt = false;
+    if (q.type === 'single' || q.type === 'multi') {
+      var mine = (ans.letters || []).slice().sort();
+      var key = (q.answerLetters || []).slice().sort();
+      hit = mine.filter(function (l) { return key.indexOf(l) >= 0; }).length;
+      total = key.length;
+      ok = mine.length === key.length && hit === key.length;
+      /* 争议题：同一批选项里的旧口径答案也接受（考场优先官方口径） */
+      if (!ok && (q.altAccepted || []).length) {
+        var alts = q.altAccepted.slice().sort();
+        if (mine.length === alts.length && mine.every(function (l) { return alts.indexOf(l) >= 0; })) {
+          ok = true; alt = true; hit = total;
+        }
+      }
+      partial = !ok && hit > 0;
+      var optText = {};
+      (q.options || []).forEach(function (o) { optText[o.k] = (o.zh || o.t); });
+      var show = function (ks) {
+        return ks.map(function (k) { return optText[k] || k; }).join('；') || '（未选）';
+      };
+      detail.push({
+        label: '选项', ok: ok, mine: show(mine), key: show(key),
+        partial: partial, alt: alt
+      });
+    } else if (q.type === 'blanks') {
+      var ms = ans.blanks || [];
+      (q.blanks || []).forEach(function (b, i) {
+        var m = ms[i] || '';
+        var good = same(m, b.key);
+        total++;
+        if (good) hit++;
+        detail.push({ label: b.label, ok: good, mine: m || '（未选）', key: b.key });
+      });
+      ok = total > 0 && hit === total;
+      partial = hit > 0 && hit < total;
+    } else if (q.type === 'order') {
+      var mo = ans.order || [];
+      (q.order || []).forEach(function (o, i) {
+        var m = mo[i] || '';
+        var good = same(m, o.text);
+        total++;
+        if (good) hit++;
+        detail.push({ label: '第 ' + (i + 1) + ' 步', ok: good, mine: m || '（未选）', key: o.text });
+      });
+      ok = total > 0 && hit === total;
+      partial = hit > 0 && hit < total;
+    } else if (q.type === 'yesno') {
+      var my = ans.yesno || [];
+      (q.statements || []).forEach(function (s, i) {
+        var good = my[i] === s.key;
+        total++;
+        if (good) hit++;
+        detail.push({
+          label: s.t.length > 40 ? s.t.slice(0, 40) + '…' : s.t,
+          ok: good,
+          mine: my[i] === undefined ? '（未答）' : (my[i] ? '是' : '否'),
+          key: s.key ? '是' : '否'
+        });
+      });
+      ok = total > 0 && hit === total;
+      partial = hit > 0 && hit < total;
+    } else { /* selfcheck：看答案自评 */
+      ok = ans.self === 'right';
+      total = 1;
+      hit = ok ? 1 : 0;
+      detail.push({ label: '自评', ok: ok, mine: ans.self === 'right' ? '我答对了' : '我答错了', key: q.answerText });
+    }
+    return {
+      ok: ok, partial: partial, hit: hit, total: total, detail: detail,
+      alt: alt, selfcheck: q.type === 'selfcheck'
+    };
+  }
+
+  /* ------------------------------------------------------------ 记忆（间隔重复） */
+  function newRecord() {
+    return {
+      seen: 0, streak: 0, best: 0, lapses: 0, unsure: false, star: false, box: 0,
+      last: null, lastAt: 0, lastAnswer: '', due: '', rounds: 0, confused: 0
+    };
+  }
+
+  function applyResult(rec, res, now) {
+    now = now || Date.now();
+    rec.seen = (rec.seen || 0) + 1;
+    rec.lastAt = now;
+    rec.rounds = (rec.rounds || 0) + 1;
+    if (res.unsure) rec.confused = (rec.confused || 0) + 1;
+    var good = res.ok && !res.unsure;
+    if (good) {
+      rec.streak = (rec.streak || 0) + 1;
+      rec.box = Math.min(INTERVALS.length - 1, (rec.box || 0) + 1);
+      if (rec.streak >= MASTER_STREAK) rec.unsure = false;
+    } else {
+      if (!res.ok) rec.lapses = (rec.lapses || 0) + 1;
+      if (res.unsure) rec.unsure = true;
+      rec.streak = 0;
+      rec.box = 0;
+    }
+    rec.best = Math.max(rec.best || 0, rec.streak || 0);   /* 历史最长连对：达成过就不因后来答错而抹掉 */
+    rec.last = res.ok ? (res.partial ? 'partial' : 'right') : 'wrong';
+    rec.due = today(now + INTERVALS[rec.box] * DAY);
+    return rec;
+  }
+
+  function mastered(rec) {
+    if (!rec) return false;
+    return (rec.streak || 0) >= MASTER_STREAK && !rec.unsure;
+  }
+
+  /* 历史最长连对（兼容老数据：没有 best 就用当前 streak） */
+  function bestOf(rec) {
+    if (!rec) return 0;
+    return Math.max(rec.best || 0, rec.streak || 0);
+  }
+
+  /* 退役：连对 N 次后不再出现在记忆队列（N<=0 表示不退役） */
+  function retired(rec, n) {
+    if (!rec || !n || n <= 0) return false;
+    return (rec.streak || 0) >= n;
+  }
+
+  function isWeak(rec) {
+    if (!rec || !rec.seen) return false;
+    return rec.last === 'wrong' || rec.last === 'partial' || rec.unsure || (rec.streak || 0) < MASTER_STREAK;
+  }
+
+  /* ------------------------------------------------------------ 队列 */
+  function shuffle(arr, seed) {
+    var a = arr.slice(), s = seed || Date.now();
+    function rnd() { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rnd() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function pool(bank, records, mode, opts) {
+    opts = opts || {};
+    var dom = opts.domain || null;
+    var t = today();
+    var RET = opts.retire === undefined ? 3 : opts.retire;   /* 连对 N 次 → 退役 */
+    var list = bank.questions.filter(function (q) {
+      if (dom && q.domain !== dom) return false;
+      var r = records[q.id];
+      if ((mode === 'memory' || mode === 'unmastered' || mode === 'halfway' || mode === 'unseen') && retired(r, RET)) {
+        return false;                       /* 已退役：记忆类队列不再出现 */
+      }
+      switch (mode) {
+        case 'retired': return retired(r, RET);
+        case 'notyet': /* 做过但还没连对过，或带未消化的蒙标记 */
+          return !!r && r.seen > 0 && ((r.streak || 0) === 0 || r.unsure);
+        case 'not3': /* 历史最长连对还没到目标次数（含没做过的） */
+          return !r || bestOf(r) < (opts.target === undefined ? 3 : opts.target);
+        case 'memory': /* 未掌握的都要练；已掌握的只在到期时回来复习 */
+          return !mastered(r) || !r.seen || (r.due && r.due <= t);
+        case 'wrong': return !!r && (r.lapses > 0 || r.last === 'wrong' || r.last === 'partial' || r.unsure);
+        case 'unsure': return !!r && r.unsure;
+        case 'unmastered': return !mastered(r);
+        case 'halfway': /* 已连对 1 次（差一次就掌握） */
+          return !!r && r.seen > 0 && !mastered(r) && (r.streak || 0) >= 1 && !r.unsure;
+        case 'unseen': return !r || !r.seen;
+        case 'star': return !!r && r.star;
+        case 'conflict': return (q.flags || []).indexOf('conflict') >= 0;
+        case 'selfcheck': return q.type === 'selfcheck';
+        case 'due': return !r || !r.seen || (r.due && r.due <= t);
+        default: return true;
+      }
+    });
+    return list;
+  }
+
+  /* 记忆队列：错题 → 蒙对 → 到期 → 未做 → 连对不足 */
+  function buildQueue(bank, records, mode, opts) {
+    opts = opts || {};
+    var now = opts.now || Date.now();
+    var t = today(now);
+    var list = pool(bank, records, mode || 'memory', opts);
+    if (mode === 'memory') {
+      list = list.map(function (q) {
+        var r = records[q.id] || newRecord();
+        var w = 0;
+        if (r.last === 'wrong') w += 100;
+        if (r.unsure) w += 60;
+        if (r.last === 'partial') w += 40;
+        if (!r.seen) w += 30;
+        if (r.due && r.due <= t) w += 20;
+        if ((r.streak || 0) < MASTER_STREAK) w += 10;
+        w += Math.min(9, r.lapses || 0);
+        w -= Math.min(9, Math.floor((now - (r.lastAt || 0)) / DAY)) * 0.5;
+        return { q: q, w: w };
+      }).sort(function (a, b) { return b.w - a.w; }).map(function (x) { return x.q; });
+    } else if (mode === 'random20') {
+      list = stratified(bank, list, opts.limit || 20, opts.seed);
+    }
+    if (opts.shuffle && mode !== 'random20') list = shuffle(list, opts.seed);
+    if (opts.limit) list = list.slice(0, opts.limit);
+    return list;
+  }
+
+  /* 按域占比抽样（默认 40/22/20/10/8，用于模拟考试节奏） */
+  function stratified(bank, list, limit, seed) {
+    var ratios = { P1: 0.40, P2: 0.22, P3: 0.20, P4: 0.10, P5: 0.08 };
+    var byDom = {};
+    list.forEach(function (q) { (byDom[q.domain] = byDom[q.domain] || []).push(q); });
+    var out = [];
+    Object.keys(byDom).forEach(function (d) {
+      var n = Math.max(1, Math.round(limit * (ratios[d] || 0.1)));
+      out = out.concat(shuffle(byDom[d], seed).slice(0, n));
+    });
+    return shuffle(out, seed).slice(0, limit);
+  }
+
+  /* ------------------------------------------------------------ 统计 / 就绪度 */
+  function stats(bank, records, opts) {
+    opts = opts || {};
+    var RET = opts.retire === undefined ? 3 : opts.retire;
+    var TGT = opts.target === undefined ? 3 : opts.target;
+    var s = {
+      total: bank.questions.length, seen: 0, mastered: 0, wrong: 0, partial: 0,
+      unsure: 0, unseen: 0, selfcheck: 0, conflicts: [], byDomain: {}, weakList: [],
+      halfway: 0, notYet: 0, retired: 0, retireN: RET,
+      targetN: TGT, targetDone: 0, targetLeft: 0
+    };
+    bank.questions.forEach(function (q) {
+      var r = records[q.id];
+      var d = q.domain;
+      s.byDomain[d] = s.byDomain[d] || { total: 0, mastered: 0, wrong: 0 };
+      s.byDomain[d].total++;
+      if (!r || !r.seen) s.unseen++;
+      else s.seen++;
+      if (mastered(r)) { s.mastered++; s.byDomain[d].mastered++; }
+      else if (r && r.seen) {
+        if ((r.streak || 0) >= 1 && !r.unsure) s.halfway++;   /* 连对 1 次：再答对一次就掌握 */
+        else s.notYet++;                                      /* 还没连对过 / 有蒙标记 */
+      }
+      if (r && r.last === 'wrong') { s.wrong++; s.byDomain[d].wrong++; }
+      if (r && r.last === 'partial') s.partial++;
+      if (r && r.unsure) s.unsure++;
+      if (q.type === 'selfcheck') s.selfcheck++;
+      if ((q.flags || []).indexOf('conflict') >= 0) {
+        s.conflicts.push({ id: q.id, ok: mastered(r), note: (bank.conflicts.filter(function (c) { return 'Q' + c.q === q.id; })[0] || {}).note || '' });
+      }
+      if (retired(r, RET)) s.retired++;
+      if (bestOf(r) >= TGT) s.targetDone++; else s.targetLeft++;
+      if (isWeak(r) && !retired(r, RET)) s.weakList.push(q.id);
+    });
+    s.masteryRate = s.total ? s.mastered / s.total : 0;
+    s.ready = s.mastered === s.total ? 'ready' : (s.masteryRate >= 0.85 ? 'almost' : 'not-ready');
+    return s;
+  }
+
+  /* ------------------------------------------------------------ 初始记忆（导入历史） */
+  /* 迁移：老记录没有 best 字段，用当前 streak 回填，避免"N 连对目标"被算成 0 */
+  function backfillBest(records) {
+    var n = 0;
+    Object.keys(records || {}).forEach(function (k) {
+      var r = records[k];
+      if (!r) return;
+      var want = Math.max(r.streak || 0, r.best || 0);
+      if ((r.best || 0) !== want) { r.best = want; n++; }
+    });
+    return n;
+  }
+
+  function seedRecords(bank, seed) {
+    var out = {};
+    if (!seed) return out;
+    Object.keys(seed).forEach(function (num) {
+      var id = 'Q' + num;
+      var rec = newRecord();
+      var s = seed[num];
+      rec.seen = 1;
+      rec.lastAt = Date.parse(s.date || '') || 0;
+      rec.lastAnswer = s.answer || '';
+      rec.verdictText = s.verdictText || '';
+      rec.coverage = s.coverage || '';
+      if (s.verdict === 'right') { rec.last = 'right'; rec.streak = 1; rec.box = 1; }
+      else if (s.verdict === 'unsure') { rec.last = 'right'; rec.streak = 0; rec.unsure = true; rec.box = 0; }
+      else if (s.verdict === 'partial') { rec.last = 'partial'; rec.streak = 0; rec.box = 0; }
+      else if (s.verdict === 'skipped') { rec.seen = 0; rec.last = null; rec.box = 0; }
+      else if (s.verdict === 'conflict') { rec.last = 'partial'; rec.streak = 0; rec.box = 0; }
+      else { rec.last = 'wrong'; rec.streak = 0; rec.lapses = 1; rec.box = 0; }
+      rec.due = today();
+      out[id] = rec;
+    });
+    return out;
+  }
+
+  /* ------------------------------------------------------------ 纯文本渲染辅助 */
+  function esc(s) {
+    return String(s === undefined || s === null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  /* 极简 Markdown：**粗体** 与 `代码`（先转义，再替换，保持安全） */
+  function md(s) {
+    return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
+
+  function para(text) {
+    return md(text).split(/\n{2,}/).map(function (p) {
+      return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+
+  /* 把正文里的 http(s) 链接变成可点的 <a>（先转义再替换，避免 XSS） */
+  function linkify(text) {
+    return md(text).replace(/(https?:\/\/[^\s<>"）)】]+)/g, function (u) {
+      return '<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + u + '</a>';
+    });
+  }
+
+  function paraLink(text) {
+    return linkify(text).split(/\n{2,}/).map(function (p) {
+      return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+
+  root.A103 = {
+    norm: norm, normExact: normExact, same: same, candHit: candHit, grade: grade,
+    applyResult: applyResult, newRecord: newRecord,
+    mastered: mastered, isWeak: isWeak, retired: retired, bestOf: bestOf, backfillBest: backfillBest,
+    buildQueue: buildQueue, stats: stats,
+    seedRecords: seedRecords,
+    today: today, shuffle: shuffle, esc: esc, md: md, para: para, linkify: linkify, paraLink: paraLink,
+    INTERVALS: INTERVALS, MASTER_STREAK: MASTER_STREAK
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var A = window.A103;
+  var LS = { rec: 'ai103.records.v1', set: 'ai103.settings.v1', pass: 'ai103.pass.v1', seed: 'ai103.seeded.v1' };
+  var BANK = null, S = load(LS.set, { limit: 20, shuffle: true, showRaw: false, retire: 3 });
+  if (S.retire === undefined) S.retire = 3;   /* 连对 N 次后从记忆队列退役；0 = 不退役 */
+  if (S.shuffle === undefined) S.shuffle = true;  /* 打乱选项/候选顺序（防记位置） */
+  var records = load(LS.rec, {});
+  var view = { tab: 'home', queue: [], qi: 0, ans: null, graded: null, unsure: false, session: null, notesQuery: '' };
+
+  function load(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return A.esc(s); }
+  function rec(id) { if (!records[id]) records[id] = A.newRecord(); return records[id]; }
+  function commit() { save(LS.rec, records); }
+
+  /* ---------------------------------------------------- 解锁 */
+  function b64ToBuf(b64) {
+    var bin = atob(b64), buf = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return buf;
+  }
+  function decrypt(pass, payload) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey'])
+      .then(function (base) {
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: b64ToBuf(payload.salt), iterations: payload.iter, hash: 'SHA-256' },
+          base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      })
+      .then(function (key) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBuf(payload.iv) }, key, b64ToBuf(payload.ct));
+      })
+      .then(function (buf) { return JSON.parse(new TextDecoder().decode(buf)); });
+  }
+
+  function boot() {
+    if (window.__BANK_PLAIN__) { start(window.__BANK_PLAIN__); return; }   /* 本地明文版（不出公网） */
+    var payload = window.__BANK_ENC__;
+    if (!payload) { $('boot').innerHTML = '题库数据缺失（bank.enc.js 未加载）'; return; }
+    if (!window.crypto || !window.crypto.subtle) {
+      $('boot').innerHTML = '<b>这个地址不支持解密</b><br><br>' +
+        '浏览器只在 HTTPS（或本地文件）下提供解密能力，http://局域网地址 不行。<br><br>' +
+        '请改用：<br>① 部署后的 https 链接；或<br>② 本地明文版 <code>local/index.html</code>（同一 Wi-Fi 下开 http 服务）；或<br>' +
+        '③ 把 offline.html 存到手机本地打开。';
+      return;
+    }
+    var saved = load(LS.pass, null);
+    if (saved) {
+      decrypt(saved, payload).then(function (bank) { start(bank); }, function () { askPass('口令失效，请重新输入'); });
+    } else {
+      askPass('');
+    }
+  }
+
+  function askPass(msg) {
+    $('main').innerHTML =
+      '<div class="card"><h2>解锁题库</h2>' +
+      (msg ? '<div class="note warn">' + esc(msg) + '</div>' : '') +
+      '<p class="muted">题库以 AES-256 加密存放，输入口令后在本机解密；口令只保存在这台设备的浏览器里。</p>' +
+      '<input type="password" id="pw" placeholder="口令" autocomplete="current-password">' +
+      '<button class="btn primary block" id="go">解锁</button>' +
+      '<div class="hint" id="err"></div></div>';
+    $('go').onclick = function () {
+      var v = $('pw').value.trim();
+      if (!v) return;
+      $('err').textContent = '解密中…';
+      decrypt(v, window.__BANK_ENC__).then(function (bank) {
+        save(LS.pass, v);
+        start(bank);
+      }, function () { $('err').textContent = '口令不对，再试一次'; });
+    };
+    $('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('go').click(); });
+  }
+
+  function start(bank) {
+    BANK = bank;
+    $('boot').classList.add('hide');
+    $('tabs').classList.remove('hide');
+    if (window.__BUILD__ && $('verPill')) {
+      $('verPill').textContent = 'v' + String(window.__BUILD__.hash).slice(0, 6);
+    }
+    var fixed = A.backfillBest(records);   /* 老记录回填「历史最长连对」 */
+    if (fixed) commit();
+    if (!localStorage.getItem(LS.seed) && bank.historySeed) {
+      var seeded = A.seedRecords(bank, bank.historySeed);
+      Object.keys(seeded).forEach(function (id) { if (!records[id] || !records[id].seen) records[id] = seeded[id]; });
+      localStorage.setItem(LS.seed, '1');
+      commit();
+    }
+    document.querySelectorAll('nav.tabs button').forEach(function (b) {
+      b.onclick = function () { view.tab = b.dataset.tab; render(); };
+    });
+    exposeDebug();
+    render();
+  }
+
+  /* ---------------------------------------------------- 首页 */
+  function render() {
+    document.querySelectorAll('nav.tabs button').forEach(function (b) {
+      b.classList.toggle('on', b.dataset.tab === view.tab);
+    });
+    if (!BANK) return;
+    if (view.tab === 'home') renderHome();
+    else if (view.tab === 'stats') renderStats();
+    else if (view.tab === 'notes') renderNotes();
+    else renderData();
+    window.scrollTo(0, 0);
+  }
+
+  function home() { view.tab = 'home'; view.queue = []; render(); }
+
+  function renderHome() {
+    var st = A.stats(BANK, records, { retire: S.retire, target: (S.retire > 0 ? S.retire : 3) });
+    var due = A.buildQueue(BANK, records, 'memory', { limit: 999, retire: S.retire }).length;
+    var wrongN = A.buildQueue(BANK, records, 'wrong', {}).length;
+    var pct = Math.round(st.masteryRate * 100);
+    var readyTxt = st.ready === 'ready' ? ['可以去考', 'var(--ok)'] :
+      (st.ready === 'almost' ? ['接近就绪', 'var(--warn)'] : ['还没就绪', 'var(--bad)']);
+    $('main').innerHTML =
+      '<div class="card">' +
+        '<h2>就绪度</h2>' +
+        '<div class="row" style="justify-content:space-between"><b style="font-size:30px">' + pct + '%</b>' +
+        '<span class="badge" style="color:' + readyTxt[1] + ';border-color:' + readyTxt[1] + '">' + readyTxt[0] + '</span></div>' +
+        '<div class="bar" style="margin:10px 0"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="grid2">' +
+          '<div class="stat"><b style="color:var(--ok)">' + st.mastered + '</b><span>已掌握（连对 2 次）</span></div>' +
+          '<div class="stat" data-q="halfway" style="border:1px solid var(--line)"><b style="color:var(--warn)">' + st.halfway + '</b><span>差一次就掌握（连对 1 次）</span></div>' +
+          '<div class="stat" data-q="notyet" style="border:1px solid var(--line)"><b>' + st.notYet + '</b><span>还没连对过 / 有蒙标记</span></div>' +
+          '<div class="stat" data-q="unseen" style="border:1px solid var(--line)"><b>' + st.unseen + '</b><span>还没做过</span></div>' +
+        '</div>' +
+        '<div class="hint">👆 点这四格可以直接专刷对应状态的题。</div>' +
+        (S.retire > 0 ? '<div class="note" style="margin-top:10px"><b>🎯 ' + st.targetN + ' 连对目标：' +
+          st.targetDone + ' / ' + st.total + '</b>（还差 ' + st.targetLeft + ' 题）<br>' +
+          '「达成」＝该题曾经连续答对 ' + st.targetN + ' 次（之后即使偶尔答错也不回退，因为已经证明会了）。' +
+          '退役阈值 ' + S.retire + ' 次与这个目标是同一套标准。</div>' : '') +
+        (S.retire > 0 ? '<div class="muted" style="margin-top:8px">🎓 已退役（连对 ' + S.retire +
+          ' 次以上，不再进记忆队列）：<b>' + st.retired + '</b> 题</div>' : '') +
+        '<div class="note" style="margin-top:12px"><b>为什么答对了很多题，掌握还是 0？</b><br>' +
+          '掌握判据是<b>同一题连续 2 次答对</b>（单次答对只算「连对 1 次」，因为仓库规则要求"蒙对＝错题、一次答对不算会"）。' +
+          '所以你刚答对的那些题现在都在中间那格 <b>' + st.halfway + '</b> 里——<b>再答对一次就变成已掌握</b>。</div>' +
+        '<div class="muted" style="margin-top:8px">合计 ' + st.total + ' 题：旧库 135 + 新库补充 18；' +
+        '错/蒙/半对 ' + wrongN + ' 题待消化，存疑题 ' + st.conflicts.length + ' 道。</div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h2>开刷</h2>' +
+        '<button class="btn primary block" id="goMemory">记忆队列（' + Math.min(S.limit, due) + ' 题）</button>' +
+        '<button class="btn block" id="goRandom">随机 ' + S.limit + ' 题（域占比模拟）</button>' +
+        (st.halfway ? '<button class="btn block" id="goHalf" style="border-color:var(--warn);color:var(--warn)">' +
+          '⚡ 专刷「差一次就掌握」的 ' + st.halfway + ' 题（刷完掌握数直接涨）</button>' : '') +
+        (st.targetLeft ? '<button class="btn block" id="goTarget">🎯 专刷还没到 ' + st.targetN +
+          ' 连对的 ' + st.targetLeft + ' 题</button>' : '') +
+        '<div class="grid2">' +
+          '<button class="btn sm" id="goWrong">错题本（' + wrongN + '）</button>' +
+          '<button class="btn sm" id="goUnmastered">未掌握</button>' +
+          '<button class="btn sm" id="goUnseen">没做过（' + st.unseen + '）</button>' +
+          '<button class="btn sm" id="goConflict">★存疑题（' + st.conflicts.length + '）</button>' +
+          '<button class="btn sm" id="goSelf">自评卡（' + st.selfcheck + '）</button>' +
+          '<button class="btn sm" id="goStar">我收藏的</button>' +
+          (S.retire > 0 && st.retired ? '<button class="btn sm" id="goRetired">已退役（' + st.retired + '）</button>' : '') +
+        '</div>' +
+        '<div class="muted" style="margin-top:10px">按域刷：</div>' +
+        '<div class="grid2" style="margin-top:6px">' +
+          ['P1', 'P2', 'P3', 'P4', 'P5'].map(function (d) {
+            var x = st.byDomain[d] || { total: 0, mastered: 0 };
+            return '<button class="btn sm" data-dom="' + d + '">' + d + ' ' + x.mastered + '/' + x.total + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      lastSessionCard();
+    $('goMemory').onclick = function () { startQueue('memory'); };
+    $('goRandom').onclick = function () { startQueue('random20'); };
+    if ($('goHalf')) $('goHalf').onclick = function () { startQueue('halfway', { limit: 999 }); };
+    if ($('goTarget')) $('goTarget').onclick = function () { startQueue('not3', { limit: 999 }); };
+    $('main').querySelectorAll('[data-q]').forEach(function (cell) {
+      cell.onclick = function () { startQueue(cell.dataset.q, { limit: 999 }); };
+    });
+    $('goWrong').onclick = function () { startQueue('wrong'); };
+    $('goUnmastered').onclick = function () { startQueue('unmastered'); };
+    $('goUnseen').onclick = function () { startQueue('unseen'); };
+    $('goConflict').onclick = function () { startQueue('conflict'); };
+    $('goSelf').onclick = function () { startQueue('selfcheck'); };
+    $('goStar').onclick = function () { startQueue('star'); };
+    if ($('goRetired')) $('goRetired').onclick = function () { startQueue('retired', { limit: 999 }); };
+    $('main').querySelectorAll('[data-dom]').forEach(function (b) {
+      b.onclick = function () { startQueue('all', { domain: b.dataset.dom }); };
+    });
+  }
+
+  function lastSessionCard() {
+    if (!view.session || !view.session.done) return '';
+    var s = view.session;
+    return '<div class="card"><h2>上一轮</h2>' +
+      '<div class="row wrap"><span class="badge">共 ' + s.done + ' 题</span>' +
+      '<span class="badge" style="color:var(--ok)">对 ' + s.right + '</span>' +
+      '<span class="badge" style="color:var(--warn)">半对 ' + s.partial + '</span>' +
+      '<span class="badge" style="color:var(--bad)">错 ' + s.wrong + '</span></div>' +
+      (s.wrongIds.length ? '<div class="muted" style="margin-top:8px">本轮错题：' + s.wrongIds.join(' ') + '</div>' : '') +
+      (s.wrongIds.length ? '<button class="btn block sm" id="redoBad">只重刷本轮错题</button>' : '') +
+      '</div>';
+  }
+
+  /* ---------------------------------------------------- 刷题 */
+  function startQueue(mode, opts) {
+    var list = A.buildQueue(BANK, records, mode, Object.assign({ limit: mode === 'all' ? 999 : S.limit, seed: Date.now(), retire: S.retire, target: (S.retire > 0 ? S.retire : 3) }, opts || {}));
+    if (!list.length) { alert('这个队列现在是空的 👍'); return; }
+    view.queue = list; view.qi = 0;
+    view.session = { mode: mode, done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [],
+      targetAtStart: A.stats(BANK, records, { retire: S.retire, target: TGT() }).targetDone };
+    view.tab = 'quiz';
+    document.querySelectorAll('nav.tabs button').forEach(function (b) { b.classList.remove('on'); });
+    renderQuiz();
+  }
+
+  /* 仅在 ?debug=1 时暴露内部入口，供自动化测试使用（正常使用无影响） */
+  function exposeDebug() {
+    if (location.search.indexOf('debug') < 0) return;
+    window.__A103__ = {
+      bank: BANK,
+      start: startQueue,
+      records: function () { return records; },
+      setLimit: function (n) { S.limit = n; },
+      startIds: function (ids) {
+        var qs = ids.map(findQ).filter(Boolean);
+        if (!qs.length) return;
+        view.queue = qs; view.qi = 0;
+        view.session = { mode: 'ids', done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
+        view.tab = 'quiz';
+        renderQuiz();
+      },
+      clear: function () { records = {}; }
+    };
+  }
+
+  function renderQuiz() {
+    var q = view.queue[view.qi];
+    if (!q) return renderSummary();
+    view.ans = blankAns(q); view.graded = null; view.unsure = false;
+    view.rnd = Math.floor(Math.random() * 1000000000) + 1;
+    view.disp = buildDisp(q, view.rnd);
+    var r = records[q.id] || {};
+    var caseHtml = q.caseRef && BANK.cases[q.caseRef]
+      ? '<details><summary>案例背景（' + esc(BANK.cases[q.caseRef].title) + '）</summary><div class="dc">' + A.para(BANK.cases[q.caseRef].text) + '</div></details>' : '';
+    /* 答题前不显示任何来源标签/更正说明（会暗示答案）；这些一律放到答完之后 */
+    var stemHtml = q.zhStem ? A.para(q.zhStem) : A.para(q.stem);
+    var enFold = '';
+    if (q.zhStem) {
+      var enOpts = (q.options || []).map(function (o) { return esc(o.k) + '. ' + esc(o.t); }).join('<br>');
+      enFold = '<details><summary>英文原文（对照用）</summary><div class="dc">' + A.para(q.stem) +
+        (enOpts ? '<div style="margin-top:8px">' + enOpts + '</div>' : '') + '</div></details>';
+    }
+    var warnHtml = q.zhWarn ? '<div class="note warn">⚠ ' + esc(q.zhWarn) + '</div>' : '';
+    $('main').innerHTML =
+      '<div class="card" id="qcard" data-qid="' + q.id + '">' +
+        '<div class="row wrap" style="margin-bottom:8px">' +
+          '<span class="badge ' + q.domain.toLowerCase() + '">' + q.domain + ' ' + esc(domainName(q.domain)) + '</span>' +
+          '<span class="badge">' + esc(q.kind || '') + '</span>' +
+          (q.type === 'selfcheck' ? '<span class="badge self">自评卡</span>' : '') +
+          '<span class="badge">' + (view.qi + 1) + '/' + view.queue.length + '</span>' +
+          (r.star ? '<span class="badge" style="color:var(--star)">★</span>' : '') +
+        '</div>' +
+        caseHtml + warnHtml +
+        '<div class="qstem" id="stem">' + stemHtml + '</div>' +
+        enFold +
+        '<div id="area"></div>' +
+        '<div id="fb"></div>' +
+      '</div>' +
+      '<div class="barwrap"><div class="qbar" id="qbar"></div></div>';
+    renderArea(q);
+    renderBar(q);
+  }
+
+  /* 每次进题重新打乱展示顺序（选项/下拉候选/排序候选池），判分仍按原始 key */
+  function buildDisp(q, rnd) {
+    var on = S.shuffle !== false;
+    if (q.type === 'single' || q.type === 'multi') {
+      var opts = (q.options || []).map(function (o) { return { k: o.k, t: (o.zh || o.t) }; });
+      return { opts: on ? A.shuffle(opts, rnd) : opts };
+    }
+    if (q.type === 'blanks') {
+      return { blanks: (q.blanks || []).map(function (b) {
+        return { label: b.label, cands: on ? A.shuffle(b.cands, rnd) : b.cands };
+      }) };
+    }
+    if (q.type === 'order') {
+      return { pool: on ? A.shuffle(q.pool, rnd) : q.pool };
+    }
+    return {};
+  }
+
+  function domainName(d) {
+    var m = { P1: '规划', P2: '生成式/代理', P3: '视觉', P4: '文本', P5: '信息提取' };
+    return m[d] || '';
+  }
+
+  function TGT() { return S.retire > 0 ? S.retire : 3; }
+
+  /* 现判定的可读摘要（下拉/排序/是非题不能直接截 answerText） */
+  function verdictSummary(q) {
+    if (q.type === 'blanks') return (q.blanks || []).map(function (b) { return b.label + ' → ' + b.key; }).join('；');
+    if (q.type === 'order') return (q.order || []).map(function (o, i) { return '第' + (i + 1) + '步 → ' + o.text; }).join('；');
+    if (q.type === 'yesno') return (q.statements || []).map(function (s, i) { return '第' + (i + 1) + '项 → ' + (s.key ? '是' : '否'); }).join('；');
+    if (q.type === 'selfcheck') return q.answerText || '';
+    var ls = (q.answerLetters || []).join('、');
+    return ls || q.answerText || '';
+  }
+
+  function blankAns(q) {
+    if (q.type === 'blanks') return { blanks: (q.blanks || []).map(function () { return ''; }) };
+    if (q.type === 'order') return { order: (q.order || []).map(function () { return ''; }) };
+    if (q.type === 'yesno') return { yesno: (q.statements || []).map(function () { return null; }) };
+    if (q.type === 'selfcheck') return { self: null };
+    return { letters: [] };
+  }
+
+  function renderArea(q) {
+    var el = $('area'), h = '';
+    if (q.type === 'single' || q.type === 'multi') {
+      h = ((view.disp && view.disp.opts) || []).map(function (o, i) {
+        var letter = String.fromCharCode(65 + i);   /* 打乱后重新标 A/B/C/D */
+        return '<button class="opt" data-k="' + o.k + '"><span class="k">' + letter + '</span><span>' +
+          esc(o.t) + '</span></button>';
+      }).join('');
+      el.innerHTML = h;
+      el.querySelectorAll('.opt').forEach(function (b) {
+        b.onclick = function () {
+          if (view.graded) return;
+          var k = b.dataset.k;
+          if (q.type === 'single') view.ans.letters = [k];
+          else {
+            var i = view.ans.letters.indexOf(k);
+            if (i >= 0) view.ans.letters.splice(i, 1); else view.ans.letters.push(k);
+          }
+          el.querySelectorAll('.opt').forEach(function (x) {
+            x.classList.toggle('sel', view.ans.letters.indexOf(x.dataset.k) >= 0);
+          });
+          renderBar(q);
+        };
+      });
+    } else if (q.type === 'blanks') {
+      el.innerHTML = ((view.disp && view.disp.blanks) || []).map(function (b, i) {
+        return '<div class="blank"><div class="lab">' + esc(b.label) + '</div>' +
+          '<select data-i="' + i + '"><option value="">— 请选择 —</option>' +
+          (b.cands || []).map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+          '</select></div>';
+      }).join('');
+      el.querySelectorAll('select').forEach(function (sel) {
+        sel.onchange = function () { view.ans.blanks[+sel.dataset.i] = sel.value; renderBar(q); };
+      });
+    } else if (q.type === 'order') {
+      el.innerHTML = '<div class="muted" style="margin-top:10px">按正确顺序，为每一步选择操作：</div>' +
+        (q.slots || []).map(function (s, i) {
+          return '<div class="blank"><div class="lab">第 ' + (i + 1) + ' 步</div>' +
+            '<select data-i="' + i + '"><option value="">— 请选择 —</option>' +
+            ((view.disp && view.disp.pool) || q.pool || []).map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('') +
+            '</select></div>';
+        }).join('');
+      el.querySelectorAll('select').forEach(function (sel) {
+        sel.onchange = function () { view.ans.order[+sel.dataset.i] = sel.value; renderBar(q); };
+      });
+    } else if (q.type === 'yesno') {
+      el.innerHTML = (q.statements || []).map(function (s, i) {
+        return '<div class="blank"><div class="lab">' + esc(s.t) + '</div>' +
+          '<div class="yn" data-i="' + i + '"><button data-v="1">是</button><button data-v="0">否</button></div></div>';
+      }).join('');
+      el.querySelectorAll('.yn').forEach(function (g) {
+        g.querySelectorAll('button').forEach(function (b) {
+          b.onclick = function () {
+            if (view.graded) return;
+            view.ans.yesno[+g.dataset.i] = b.dataset.v === '1';
+            g.querySelectorAll('button').forEach(function (x) { x.classList.toggle('sel', x === b); });
+            renderBar(q);
+          };
+        });
+      });
+    } else {
+      el.innerHTML = '<div class="note">这张是自评卡（新库热点题，原文没保留下拉候选）。先在纸上/心里作答，再点「查看答案」自评。</div>';
+    }
+  }
+
+  function ready(q) {
+    if (view.graded) return true;
+    if (q.type === 'blanks') return view.ans.blanks.every(function (x) { return !!x; });
+    if (q.type === 'order') return view.ans.order.every(function (x) { return !!x; });
+    if (q.type === 'yesno') return view.ans.yesno.every(function (x) { return x !== null && x !== undefined; });
+    if (q.type === 'selfcheck') return true;
+    return view.ans.letters.length > 0;
+  }
+
+  function renderBar(q) {
+    var r = records[q.id] || {};
+    var bar = $('qbar');
+    if (!view.graded) {
+      bar.innerHTML =
+        '<button class="btn sm" id="bUnsure" style="flex:0 0 34%">' + (view.unsure ? '🟡 已标蒙' : '标「蒙」') + '</button>' +
+        '<button class="btn sm ghost" id="bStar" style="flex:0 0 20%">' + (r.star ? '★' : '☆') + '</button>' +
+        (q.type === 'selfcheck'
+          ? '<button class="btn primary" id="bReveal">查看答案</button>'
+          : '<button class="btn primary" id="bSubmit"' + (ready(q) ? '' : ' disabled') + '>提交</button>');
+      $('bUnsure').onclick = function () { view.unsure = !view.unsure; renderBar(q); };
+      $('bStar').onclick = function () { rec(q.id).star = !rec(q.id).star; commit(); renderBar(q); };
+      if (q.type === 'selfcheck') $('bReveal').onclick = function () { gradeNow(q, { self: null }, true); };
+      else $('bSubmit').onclick = function () { gradeNow(q, view.ans, false); };
+    } else {
+      bar.innerHTML = '<button class="btn sm ghost" id="bStar" style="flex:0 0 22%">' + (r.star ? '★' : '☆') + '</button>' +
+        '<button class="btn primary" id="bNext">' + (view.qi + 1 >= view.queue.length ? '本轮小结' : '下一题') + '</button>';
+      $('bStar').onclick = function () { rec(q.id).star = !rec(q.id).star; commit(); renderBar(q); };
+      $('bNext').onclick = function () { view.qi++; renderQuiz(); };
+    }
+  }
+
+  function gradeNow(q, ans, revealOnly) {
+    if (q.type === 'selfcheck' && revealOnly) {
+      view.graded = { ok: false, partial: false, detail: [], selfcheck: true, revealed: true };
+      showFeedback(q, true);
+      $('qbar').innerHTML = '<button class="btn sm ghost" id="bStar">☆</button>' +
+        '<button class="btn" id="sYes">我答对了</button><button class="btn" id="sNo">我答错了</button>';
+      $('bStar').onclick = function () { rec(q.id).star = !rec(q.id).star; commit(); renderBar(q); };
+      $('sYes').onclick = function () { finishSelf(q, true); };
+      $('sNo').onclick = function () { finishSelf(q, false); };
+      return;
+    }
+    finishSelf(q, null, ans);
+  }
+
+  function finishSelf(q, selfRight, ans) {
+    var r = rec(q.id);
+    var res = A.grade(q, ans || { self: selfRight ? 'right' : 'wrong' });
+    res.unsure = view.unsure;
+    res.detail.forEach(function (d) { d.unsure = view.unsure; });
+    A.applyResult(r, res, Date.now());
+    r.lastAnswer = describeAnswer(q, ans || { self: selfRight ? 'right' : 'wrong' });
+    commit();
+    var s = view.session;
+    if (s) {
+      s.done++;
+      if (res.ok) s.right++; else if (res.partial) s.partial++; else { s.wrong++; s.wrongIds.push(q.id); }
+    }
+    view.graded = res;
+    showFeedback(q, false);
+    renderBar(q);
+  }
+
+  function describeAnswer(q, ans) {
+    if (q.type === 'blanks') return (ans.blanks || []).join(' / ');
+    if (q.type === 'order') return (ans.order || []).join(' → ');
+    if (q.type === 'yesno') return (ans.yesno || []).map(function (x) { return x ? '是' : '否'; }).join('／');
+    if (q.type === 'selfcheck') return ans.self === 'right' ? '自评：对' : '自评：错';
+    return (ans.letters || []).join('、');
+  }
+
+  function showFeedback(q, revealed) {
+    var g = view.graded, r = records[q.id] || {};
+    var cls = g.ok ? 'ok' : (g.partial ? 'part' : 'bad');
+    var head = g.ok
+      ? (g.alt ? '✅ 正确（争议题：旧库口径也算对，考场优先选 ' + esc((q.answerLetters || []).join('')) + '）' : '✅ 正确')
+      : (g.partial ? '🟡 部分正确（' + g.hit + '/' + g.total + '）' : (revealed ? '📖 参考答案' : '❌ 错误（' + g.hit + '/' + g.total + '）'));
+    var dt = '';
+    if (!revealed && g.detail.length) {
+      dt = '<table class="dt"><tr><th>判定点</th><th>你答</th><th>正确</th></tr>' +
+        g.detail.map(function (d) {
+          return '<tr><td>' + esc(d.label) + '</td><td class="' + (d.ok ? 'ok' : 'bad') + '">' + esc(d.mine) +
+            '</td><td class="ok">' + esc(d.key) + '</td></tr>';
+        }).join('') + '</table>';
+    } else {
+      dt = '<div class="note"><b>正确答案：</b>' + esc(q.answerText) + '</div>';
+    }
+    var notes = '';
+    (q.notes || []).forEach(function (n) {
+      notes += '<div class="note warn"><b>' + esc(n.title) + '</b>（' + esc(n.coverage) + '）<br>' +
+        A.paraLink(n.body).replace(/<p>/g, '<div>').replace(/<\/p>/g, '</div>') + '</div>';
+    });
+    var conf = BANK.conflicts.filter(function (c) { return 'Q' + c.q === q.id; })[0];
+    if (conf) {
+      notes += '<div class="note warn"><b>★ 口径冲突</b><br>旧库/新库：' + esc(conf.legacy) + '<br>现在判定：' +
+        esc(conf['new']) + '<br>' + A.linkify(conf.note) + '</div>';
+    }
+    var bk = q.banks || {};
+    var srcText = { official: '已按官方文档核对（见上方更正说明）', both: '旧库与新库两套题库一致',
+                    conflict: '两库不一致（待裁决）', legacy: (bk.multiTruncated
+                      ? '仅旧库单一来源；新库对多选题只存了首字母，无法比对'
+                      : '仅旧库单一来源（新库未收录此题），未经官方复核'),
+                    newbank: '新库补充题（旧库无此题）' }[bk.source] || '—';
+    var newPart = (bk.newNum
+      ? '新库第 ' + bk.newNum + ' 题' + (bk.new ? '，其 key = ' + esc(bk.new) : '，其答案字段不可用') +
+        (bk.sim ? '（同题相似度 ' + bk.sim + '）' : '')
+      : '新库未收录');
+    var bkSrc = (q.banks || {}).source;
+    var srcBadges =
+      (q.correction ? '<span class="badge ok2">已核对官方口径</span>' : '') +
+      (bkSrc === 'both' && !q.correction ? '<span class="badge">两库一致</span>' : '') +
+      (bkSrc === 'legacy' && !q.correction
+        ? '<span class="badge conf">' + (q.banks.multiTruncated ? '新库多选不可比对' : '仅旧库来源') + '</span>' : '') +
+      (bkSrc === 'conflict' && !q.correction ? '<span class="badge conf">两库不一致·待裁决</span>' : '') +
+      (bkSrc === 'newbank' ? '<span class="badge self">新库补充题</span>' : '');
+    var corrHtml = q.correction
+      ? '<details class="corr" open><summary>★ 这题已按官方口径核对（原库 key = ' + esc(q.correction.oldKey || '?') +
+        '，现按 ' + esc((q.answerLetters || []).join('')) + '）</summary><div class="dc">' +
+        '<div>' + A.paraLink(q.correction.why) + '</div>' +
+        '<ul class="ev">' + (q.correction.evidence || []).map(function (e) {
+          return '<li><a href="' + e.url + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' +
+            '<div class="q">' + A.linkify(e.quote) + '</div></li>';
+        }).join('') + '</ul>' +
+        (q.altAccepted && q.altAccepted.length
+          ? '<div class="muted">争议题处理：' + esc(q.altAccepted.join('、')) + ' 也算对（旧库口径），考试优先选 ' +
+            esc((q.answerLetters || []).join('')) + '。</div>' : '') +
+        '</div></details>' : '';
+    var banksHtml = '<div class="note"><b>两库口径</b><br>' +
+      '旧库 key：' + esc(bk.legacy || '—') + '　｜　新库：' + newPart + '<br>' +
+      '应用现判定：' + esc(verdictSummary(q)) + '<br>' +
+      '来源：' + esc(srcText) + '</div>';
+    var mNow = A.mastered(r);
+    var isRetired = A.retired(r, S.retire);
+    var retireHtml = isRetired
+      ? '<div class="note" style="border-left-color:var(--ok)">🎓 <b>本题已退役</b>：已连对 ' + (r.streak || 0) +
+        ' 次 ≥ 阈值 ' + S.retire + ' 次，<b>不再出现在记忆队列</b>；' +
+        '「随机 20 题 / 按域刷 / 全部」仍会抽到它，万一手滑答错会自动回到队列。</div>' : '';
+    var progHtml = '<div class="note" style="border-left-color:' + (mNow ? 'var(--ok)' : 'var(--warn)') + '">' +
+      (mNow ? '✅ 本题已掌握（当前连对 ' + (r.streak || 0) + ' 次）'
+            : '⏳ 本题连对 ' + (r.streak || 0) + '/' + A.MASTER_STREAK + '：<b>再答对一次就算掌握</b>' +
+              (r.unsure ? '（当前有未消化的「蒙」标记，答对也要先消掉它）' : '')) +
+      '　｜　🎯 ' + TGT() + ' 连对目标：历史最长连对 <b>' + A.bestOf(r) + '</b>' +
+      (A.bestOf(r) >= TGT() ? '（已达成）' : '（还差 ' + (TGT() - A.bestOf(r)) + ' 次）') + '</div>';
+    var hist = '<div class="muted">历史：做过 ' + (r.seen || 0) + ' 次｜连对 ' + (r.streak || 0) +
+      '｜累计错 ' + (r.lapses || 0) + '｜' + (r.unsure ? '有未消化的「蒙」' : '无蒙标记') +
+      (r.verdictText ? '｜上次判定：' + esc(r.verdictText) : '') +
+      (r.coverage ? '｜Coverage ' + esc(r.coverage) : '') + '</div>';
+    var raw = '<details><summary>原文（PDF 提取，解析存疑时以此为准）</summary><div class="dc">' +
+      A.para(q.raw || '(无)') + '</div></details>';
+    var exp = q.explain ? '<details open><summary>题库解析</summary><div class="dc">' + A.para(q.explain) + '</div></details>' : '';
+    $('fb').innerHTML = '<div class="fb ' + cls + '"><div class="h">' + head + '</div><div class="b">' +
+      (srcBadges ? '<div class="row wrap" style="margin-bottom:8px">' + srcBadges + '</div>' : '') +
+      progHtml + retireHtml + dt + banksHtml + corrHtml + notes + exp + hist + raw + '</div></div>';
+  }
+
+  function renderSummary() {
+    var s = view.session || { done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
+    var st = A.stats(BANK, records);
+    $('main').innerHTML =
+      '<div class="card"><h2>本轮小结</h2>' +
+      '<div class="grid3">' +
+        '<div class="stat"><b style="color:var(--ok)">' + s.right + '</b><span>全对</span></div>' +
+        '<div class="stat"><b style="color:var(--warn)">' + s.partial + '</b><span>半对</span></div>' +
+        '<div class="stat"><b style="color:var(--bad)">' + s.wrong + '</b><span>错/蒙</span></div>' +
+      '</div>' +
+      (s.wrongIds.length ? '<div class="muted" style="margin-top:10px">错题：' + s.wrongIds.join(' ') + '</div>' : '<div class="muted" style="margin-top:10px">本轮没有错题 👍</div>') +
+      '<div class="note" style="margin-top:10px">全库掌握率 ' + Math.round(st.masteryRate * 100) + '%（' + st.mastered + '/' + st.total + '）<br>' +
+        '🎯 ' + st.targetN + ' 连对目标：<b>' + st.targetDone + ' / ' + st.total + '</b>（还差 ' + st.targetLeft + ' 题）' +
+        (s.done ? '　本轮已把 <b>' + (st.targetDone - (view.session.targetAtStart == null ? 0 : view.session.targetAtStart)) +
+          '</b> 题推到 ' + st.targetN + ' 连对' : '') + '<br>' +
+        (st.halfway ? '现在有 <b>' + st.halfway + '</b> 题是「连对 1 次」状态——<b>它们再答对一次就变已掌握</b>。' : '') + '</div>' +
+      (st.halfway ? '<button class="btn primary block" id="goHalf2">⚡ 接着刷「差一次」的 ' + st.halfway + ' 题</button>' : '') +
+      '<button class="btn primary block" id="again">再来一轮记忆队列</button>' +
+      (s.wrongIds.length ? '<button class="btn block" id="redo">只重刷本轮错题</button>' : '') +
+      '<button class="btn ghost block" id="backHome">回首页</button>' +
+      '</div>';
+    $('again').onclick = function () { startQueue('memory'); };
+    if ($('goHalf2')) $('goHalf2').onclick = function () { startQueue('halfway', { limit: 999 }); };
+    if (s.wrongIds.length) $('redo').onclick = function () {
+      view.queue = s.wrongIds.map(function (id) { return findQ(id); }).filter(Boolean);
+      view.qi = 0; view.session = { mode: 'redo', done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
+      renderQuiz();
+    };
+    $('backHome').onclick = home;
+  }
+
+  function findQ(id) { return BANK.questions.filter(function (q) { return q.id === id; })[0]; }
+
+  /* ---------------------------------------------------- 就绪度 */
+  function renderStats() {
+    var st = A.stats(BANK, records, { retire: S.retire, target: (S.retire > 0 ? S.retire : 3) });
+    var doms = ['P1', 'P2', 'P3', 'P4', 'P5'].map(function (d) {
+      var x = st.byDomain[d] || { total: 0, mastered: 0 };
+      var p = x.total ? Math.round(x.mastered / x.total * 100) : 0;
+      return '<div style="margin:10px 0"><div class="row" style="justify-content:space-between">' +
+        '<span>' + d + ' ' + esc(domainName(d)) + '</span><span class="muted">' + x.mastered + '/' + x.total + '（' + p + '%）</span></div>' +
+        '<div class="bar"><i style="width:' + p + '%"></i></div></div>';
+    }).join('');
+    var weak = st.weakList.map(function (id) {
+      var q = findQ(id), r = records[id] || {};
+      var tag = r.unsure ? '蒙' : (r.last === 'wrong' ? '错' : (r.last === 'partial' ? '半' : (r.seen ? '未连对' : '没做')));
+      return '<li><span class="id">' + id + '</span><span class="t">' + esc(q.stem.slice(0, 46)) + '…</span>' +
+        '<span class="badge">' + tag + '</span></li>';
+    }).join('');
+    var confs = st.conflicts.map(function (c) {
+      /* 没答过就不显示口径说明（否则等于提前给答案） */
+      var done = (records[c.id] || {}).seen > 0;
+      var txt = done ? c.note : '（答完这道题后才会显示官方口径说明）';
+      return '<li><span class="id">' + c.id + '</span><span class="t">' + esc(txt) + '</span>' +
+        '<span class="badge">' + (c.ok ? '已连对' : '待消化') + '</span></li>';
+    }).join('');
+    $('main').innerHTML =
+      '<div class="card"><h2>总览</h2>' +
+        '<div class="grid2">' +
+          '<div class="stat"><b style="color:var(--ok)">' + st.mastered + '</b><span>已掌握（连对 2 次）</span></div>' +
+          '<div class="stat"><b style="color:var(--warn)">' + st.halfway + '</b><span>差一次就掌握</span></div>' +
+          '<div class="stat"><b>' + st.notYet + '</b><span>未连对/有蒙</span></div>' +
+          '<div class="stat"><b>' + st.unseen + '</b><span>没做过</span></div>' +
+        '</div>' +
+        '<div class="muted" style="margin-top:8px">🎓 已退役（连对 ≥' + (S.retire || 0) + ' 次，不进记忆队列）：<b>' + st.retired + '</b> 题</div>' +
+        '<div class="bar" style="margin:10px 0"><i style="width:' + Math.round(st.targetDone / st.total * 100) + '%"></i></div>' +
+        '<div class="muted">🎯 ' + st.targetN + ' 连对目标：<b>' + st.targetDone + ' / ' + st.total + '</b>（还差 ' + st.targetLeft + ' 题）</div>' +
+        (st.targetLeft ? '<button class="btn block sm" id="goTarget2">🎯 专刷还没到 ' + st.targetN + ' 连对的 ' + st.targetLeft + ' 题</button>' : '') +
+        '<button class="btn block sm" id="goHalf3">⚡ 刷「差一次」的 ' + st.halfway + ' 题</button>' +
+        (S.retire > 0 && st.retired ? '<button class="btn block sm" id="goRetired2">查看已退役的 ' + st.retired + ' 题</button>' : '') +
+        '<div class="row wrap" style="margin-top:10px">' +
+          '<span class="badge" style="color:var(--bad)">上次答错 ' + st.wrong + '</span>' +
+          '<span class="badge" style="color:var(--warn)">半对 ' + st.partial + '</span>' +
+          '<span class="badge" style="color:var(--warn)">有蒙标记 ' + st.unsure + '</span>' +
+          '<span class="badge">自评卡 ' + st.selfcheck + '</span>' +
+        '</div>' +
+        '<div class="muted" style="margin-top:10px">掌握判据：同一题连续 2 次答对、且没有未消化的「蒙」标记。判据写进应用规则：蒙对＝错题。</div>' +
+      '</div>' +
+      '<div class="card"><h2>答案来源分布（两套题库口径）</h2>' +
+        (function () {
+          var ks = BANK.meta.keySources || {};
+          var multi = BANK.questions.filter(function (x) { return x.banks && x.banks.multiTruncated; }).length;
+          return '<div class="muted">' +
+            '已按官方文档核对：<b>' + (ks.official || 0) + '</b> 题（题面带「已核对官方口径」，可展开官方链接）<br>' +
+            '旧库与新库一致：<b>' + (ks.both || 0) + '</b> 题<br>' +
+            '仅旧库单一来源：<b>' + (ks.legacy || 0) + '</b> 题' +
+            (multi ? '（其中 ' + multi + ' 题是多选，新库只存首字母、无法比对）' : '') + '<br>' +
+            '新库补充题：<b>' + (ks.n_a || 0) + '</b> 题<br>' +
+            '尚存两库冲突：<b>' + (ks.conflict || 0) + '</b> 题</div>' +
+            '<div class="muted" style="margin-top:8px">判定优先级：官方文档 &gt; 两库一致 &gt; 旧库单一来源。' +
+            '「仅旧库单一来源」不等于错，只是没有第二方证据；课堂/考场遇到疑点按官方文档走。</div>';
+        })() +
+      '</div>' +
+      '<div class="card"><h2>分域进度</h2>' + doms + '</div>' +
+      '<div class="card"><h2>★ 存疑题（考试按官方口径记）</h2><ul class="list">' + (confs || '<li>无</li>') + '</ul></div>' +
+      '<div class="card"><h2>还没掌握的题（' + st.weakList.length + '）</h2><ul class="list">' + weak + '</ul>' +
+        '<button class="btn block sm" id="drill">刷这些题</button></div>';
+    $('drill').onclick = function () { startQueue('unmastered'); };
+    if ($('goHalf3')) $('goHalf3').onclick = function () { startQueue('halfway', { limit: 999 }); };
+    if ($('goRetired2')) $('goRetired2').onclick = function () { startQueue('retired', { limit: 999 }); };
+    if ($('goTarget2')) $('goTarget2').onclick = function () { startQueue('not3', { limit: 999 }); };
+  }
+
+  /* ---------------------------------------------------- 笔记 */
+  function renderNotes() {
+    var q = view.notesQuery || '';
+    var hits = BANK.handbook.filter(function (h) {
+      if (!q) return true;
+      return (h.title + h.coverage + JSON.stringify(h.fields)).indexOf(q) >= 0;
+    });
+    var list = hits.map(function (h) {
+      var body = Object.keys(h.fields).map(function (k) { return '<b>' + esc(k) + '</b>：' + esc(h.fields[k]); }).join('<br>');
+      return '<details><summary><span class="badge">' + esc(h.coverage) + '</span>' + esc(h.title) + '</summary><div class="dc">' + body + '</div></details>';
+    }).join('');
+    var cases = Object.keys(BANK.cases).map(function (k) {
+      return '<details><summary>' + esc(BANK.cases[k].title) + '</summary><div class="dc">' + A.para(BANK.cases[k].text) + '</div></details>';
+    }).join('');
+    $('main').innerHTML =
+      '<div class="card"><h2>错因笔记（' + BANK.handbook.length + ' 条）</h2>' +
+        '<input type="search" id="nq" placeholder="搜索关键词：VNet / 部署 / OCR …" value="' + esc(q) + '">' +
+        '<div style="margin-top:10px">' + (list || '<div class="muted">没有匹配的笔记</div>') + '</div></div>' +
+      '<div class="card"><h2>案例背景</h2>' + (cases || '<div class="muted">无</div>') + '</div>' +
+      '<div class="card"><h2>使用说明</h2><div class="muted">' +
+        '答题时点选项/下拉即可作答；「标蒙」= 自述不确定，即使答对也按错题处理（沿用仓库规则）。<br>' +
+        '每题的错因笔记、★口径冲突、原文都能在答完后展开。<br>' +
+        '本页内容只存在这台设备上。</div></div>';
+    var inp = $('nq');
+    if (inp) inp.oninput = function () { view.notesQuery = inp.value; renderNotes(); };
+  }
+
+  /* ---------------------------------------------------- 数据 */
+  function renderData() {
+    var st = A.stats(BANK, records, { retire: S.retire, target: (S.retire > 0 ? S.retire : 3) });
+    $('main').innerHTML =
+      '<div class="card"><h2>本机进度</h2>' +
+        '<div class="muted">题库 ' + BANK.meta.total + ' 题（旧库 ' + BANK.meta.legacy + ' + 新库补充 ' + BANK.meta['new'] + '）<br>' +
+        '构建时间 ' + esc(BANK.meta.builtAt) + '｜考试 ' + esc(BANK.meta.examDate) + '<br>' +
+        '已掌握 ' + st.mastered + ' / ' + st.total + '</div>' +
+        '<button class="btn block" id="exp">导出进度（JSON 备份）</button>' +
+        '<label class="btn block" style="display:block">导入进度<input type="file" id="imp" accept="application/json" style="display:none"></label>' +
+        '<div class="hint">换手机、清了浏览器数据、想让我在电脑上汇总时都用这个。导出文件只含作答记录，不含题库。</div>' +
+      '</div>' +
+      '<div class="card"><h2>设置</h2>' +
+        '<div class="row" style="justify-content:space-between"><span>每轮题量</span><span class="muted">' + S.limit + '</span></div>' +
+        '<div class="grid3" style="margin:8px 0">' +
+          [10, 14, 20, 30, 50].map(function (n) { return '<button class="btn sm" data-lim="' + n + '">' + n + '</button>'; }).join('') +
+        '</div>' +
+        '<div class="row" style="justify-content:space-between;margin-top:10px"><span>连对几次后不再出现</span>' +
+          '<span class="muted">' + (S.retire > 0 ? '连对 ' + S.retire + ' 次退役' : '不退役') + '</span></div>' +
+        '<div class="grid2" style="margin:8px 0">' +
+          ['<button class="btn sm" data-ret="3">连对 3 次</button>',
+           '<button class="btn sm" data-ret="4">连对 4 次</button>',
+           '<button class="btn sm" data-ret="5">连对 5 次</button>',
+           '<button class="btn sm" data-ret="0">永不退役</button>'].join('') +
+        '</div>' +
+        '<div class="hint" style="margin-bottom:10px">退役只影响「记忆队列 / 未掌握 / 差一次」；随机 20 题、按域刷、全部仍会抽到，避免真的忘光。答错会自动解除退役。</div>' +
+        '<div class="row" style="justify-content:space-between;margin-top:10px"><span>打乱选项顺序</span>' +
+          '<span class="muted">' + (S.shuffle !== false ? '开（每次进题重新打乱）' : '关（按题库原顺序）') + '</span></div>' +
+        '<div class="grid2" style="margin:8px 0">' +
+          '<button class="btn sm" data-shf="1">开启打乱</button>' +
+          '<button class="btn sm" data-shf="0">关闭打乱</button>' +
+        '</div>' +
+        '<div class="hint" style="margin-bottom:10px">开启后：选择题选项重新标 A/B/C/D、下拉候选与排序候选池也一起打乱，判分仍按内容——避免记住「答案是 C」而不是内容。</div>' +
+        '<button class="btn block sm" id="clearPass">清除已存口令（下次重新输入）</button>' +
+        '<button class="btn block sm" id="reset">清空所有作答记录</button>' +
+        '<div class="hint">清空后不可恢复，请先导出备份。</div>' +
+      '</div>' +
+      '<div class="card"><h2>版本</h2>' +
+        '<div class="muted" id="buildInfo">应用构建：' +
+          esc((window.__BUILD__ && window.__BUILD__.hash) || '未知') + '（' +
+          esc((window.__BUILD__ && window.__BUILD__.at) || '—') + '）<br>' +
+          '题库构建：' + esc(BANK.meta.builtAt) + '</div>' +
+        '<button class="btn block sm" id="hard">强制更新到最新版</button>' +
+        '<div class="hint">如果发现界面没更新（缓存），点这个按钮：清缓存 → 注销 Service Worker → 重新加载。</div>' +
+      '</div>' +
+      '<div class="card"><h2>题源与声明</h2><div class="muted">' + esc(BANK.meta.disclaimer) + '<br>' +
+        '题库以 AES-256-GCM 加密保存，口令只在本机输入；页面本身不含明文题目。</div></div>';
+    $('exp').onclick = function () {
+      var data = { app: 'ai103-quiz', v: 1, exportedAt: new Date().toISOString(), records: records };
+      var blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ai103-progress-' + A.today() + '.json';
+      a.click();
+    };
+    $('imp').onchange = function (e) {
+      var f = e.target.files[0]; if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          var d = JSON.parse(fr.result);
+          var n = 0;
+          Object.keys(d.records || {}).forEach(function (id) {
+            if (!records[id] || (d.records[id].lastAt || 0) > (records[id].lastAt || 0)) { records[id] = d.records[id]; n++; }
+          });
+          commit(); alert('已合并 ' + n + ' 条记录'); render();
+        } catch (err) { alert('文件读不出来：' + err.message); }
+      };
+      fr.readAsText(f);
+    };
+    $('hard').onclick = function () {
+      var go = function () { location.replace(location.pathname + '?fresh=' + Date.now()); };
+      var p = Promise.resolve();
+      if (window.caches && caches.keys) {
+        p = p.then(function () { return caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); })); }); });
+      }
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        p = p.then(function () { return navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); })); }); });
+      }
+      p.then(go, go);
+    };
+    $('clearPass').onclick = function () { localStorage.removeItem(LS.pass); alert('已清除，刷新页面后需要重新输入口令'); };
+    $('reset').onclick = function () {
+      if (confirm('确定清空本机所有作答记录？')) { records = {}; commit(); alert('已清空'); render(); }
+    };
+    $('main').querySelectorAll('[data-lim]').forEach(function (b) {
+      b.onclick = function () { S.limit = +b.dataset.lim; save(LS.set, S); renderData(); };
+    });
+    $('main').querySelectorAll('[data-ret]').forEach(function (b) {
+      b.onclick = function () { S.retire = +b.dataset.ret; save(LS.set, S); renderData(); };
+    });
+    $('main').querySelectorAll('[data-shf]').forEach(function (b) {
+      b.onclick = function () { S.shuffle = b.dataset.shf === '1'; save(LS.set, S); renderData(); };
+    });
+  }
+
+  boot();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+      reg.update().catch(function () {});
+    }).catch(function () {});
+  });
+  var reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (reloaded) return;
+    reloaded = true;
+    location.reload();
+  });
+}
+</script>
+</body>
+</html>
