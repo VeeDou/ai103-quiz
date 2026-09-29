@@ -131,7 +131,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   <button data-tab="data"><b>⛁</b>数据</button>
 </nav>
 
-<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"65e3b1311f","at":"2026-09-29 00:59","bank":"2026-09-29 08:59"};</script>
+<script src="bank.enc.js"></script><script>window.__BUILD__={"hash":"9880e47fe5","at":"2026-09-29 03:23","bank":"2026-09-29 11:23"};</script>
 <script>
 /* AI-103 手机刷题 · 核心逻辑（纯函数，浏览器与 Node 共用）
  * 依赖：无。挂载到 globalThis.A103
@@ -293,6 +293,12 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     return (rec.streak || 0) >= MASTER_STREAK && !rec.unsure;
   }
 
+  /* 历史最长连对（兼容老数据：没有 best 就用当前 streak） */
+  function bestOf(rec) {
+    if (!rec) return 0;
+    return Math.max(rec.best || 0, rec.streak || 0);
+  }
+
   /* 退役：连对 N 次后不再出现在记忆队列（N<=0 表示不退役） */
   function retired(rec, n) {
     if (!rec || !n || n <= 0) return false;
@@ -331,7 +337,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         case 'notyet': /* 做过但还没连对过，或带未消化的蒙标记 */
           return !!r && r.seen > 0 && ((r.streak || 0) === 0 || r.unsure);
         case 'not3': /* 历史最长连对还没到目标次数（含没做过的） */
-          return !r || (r.best || 0) < (opts.target === undefined ? 3 : opts.target);
+          return !r || bestOf(r) < (opts.target === undefined ? 3 : opts.target);
         case 'memory': /* 未掌握的都要练；已掌握的只在到期时回来复习 */
           return !mastered(r) || !r.seen || (r.due && r.due <= t);
         case 'wrong': return !!r && (r.lapses > 0 || r.last === 'wrong' || r.last === 'partial' || r.unsure);
@@ -422,7 +428,7 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
         s.conflicts.push({ id: q.id, ok: mastered(r), note: (bank.conflicts.filter(function (c) { return 'Q' + c.q === q.id; })[0] || {}).note || '' });
       }
       if (retired(r, RET)) s.retired++;
-      if (((r && r.best) || 0) >= TGT) s.targetDone++; else s.targetLeft++;
+      if (bestOf(r) >= TGT) s.targetDone++; else s.targetLeft++;
       if (isWeak(r) && !retired(r, RET)) s.weakList.push(q.id);
     });
     s.masteryRate = s.total ? s.mastered / s.total : 0;
@@ -431,6 +437,18 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   }
 
   /* ------------------------------------------------------------ 初始记忆（导入历史） */
+  /* 迁移：老记录没有 best 字段，用当前 streak 回填，避免"N 连对目标"被算成 0 */
+  function backfillBest(records) {
+    var n = 0;
+    Object.keys(records || {}).forEach(function (k) {
+      var r = records[k];
+      if (!r) return;
+      var want = Math.max(r.streak || 0, r.best || 0);
+      if ((r.best || 0) !== want) { r.best = want; n++; }
+    });
+    return n;
+  }
+
   function seedRecords(bank, seed) {
     var out = {};
     if (!seed) return out;
@@ -489,7 +507,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
   root.A103 = {
     norm: norm, normExact: normExact, same: same, candHit: candHit, grade: grade,
     applyResult: applyResult, newRecord: newRecord,
-    mastered: mastered, isWeak: isWeak, retired: retired, buildQueue: buildQueue, stats: stats,
+    mastered: mastered, isWeak: isWeak, retired: retired, bestOf: bestOf, backfillBest: backfillBest,
+    buildQueue: buildQueue, stats: stats,
     seedRecords: seedRecords,
     today: today, shuffle: shuffle, esc: esc, md: md, para: para, linkify: linkify, paraLink: paraLink,
     INTERVALS: INTERVALS, MASTER_STREAK: MASTER_STREAK
@@ -581,6 +600,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     if (window.__BUILD__ && $('verPill')) {
       $('verPill').textContent = 'v' + String(window.__BUILD__.hash).slice(0, 6);
     }
+    var fixed = A.backfillBest(records);   /* 老记录回填「历史最长连对」 */
+    if (fixed) commit();
     if (!localStorage.getItem(LS.seed) && bank.historySeed) {
       var seeded = A.seedRecords(bank, bank.historySeed);
       Object.keys(seeded).forEach(function (id) { if (!records[id] || !records[id].seen) records[id] = seeded[id]; });
@@ -704,7 +725,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
     var list = A.buildQueue(BANK, records, mode, Object.assign({ limit: mode === 'all' ? 999 : S.limit, seed: Date.now(), retire: S.retire, target: (S.retire > 0 ? S.retire : 3) }, opts || {}));
     if (!list.length) { alert('这个队列现在是空的 👍'); return; }
     view.queue = list; view.qi = 0;
-    view.session = { mode: mode, done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [] };
+    view.session = { mode: mode, done: 0, right: 0, partial: 0, wrong: 0, wrongIds: [],
+      targetAtStart: A.stats(BANK, records, { retire: S.retire, target: TGT() }).targetDone };
     view.tab = 'quiz';
     document.querySelectorAll('nav.tabs button').forEach(function (b) { b.classList.remove('on'); });
     renderQuiz();
@@ -1017,8 +1039,8 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       (mNow ? '✅ 本题已掌握（当前连对 ' + (r.streak || 0) + ' 次）'
             : '⏳ 本题连对 ' + (r.streak || 0) + '/' + A.MASTER_STREAK + '：<b>再答对一次就算掌握</b>' +
               (r.unsure ? '（当前有未消化的「蒙」标记，答对也要先消掉它）' : '')) +
-      '　｜　🎯 ' + TGT() + ' 连对目标：历史最长连对 <b>' + (r.best || 0) + '</b>' +
-      ((r.best || 0) >= TGT() ? '（已达成）' : '（还差 ' + (TGT() - (r.best || 0)) + ' 次）') + '</div>';
+      '　｜　🎯 ' + TGT() + ' 连对目标：历史最长连对 <b>' + A.bestOf(r) + '</b>' +
+      (A.bestOf(r) >= TGT() ? '（已达成）' : '（还差 ' + (TGT() - A.bestOf(r)) + ' 次）') + '</div>';
     var hist = '<div class="muted">历史：做过 ' + (r.seen || 0) + ' 次｜连对 ' + (r.streak || 0) +
       '｜累计错 ' + (r.lapses || 0) + '｜' + (r.unsure ? '有未消化的「蒙」' : '无蒙标记') +
       (r.verdictText ? '｜上次判定：' + esc(r.verdictText) : '') +
@@ -1043,7 +1065,10 @@ code{background:#0f1520;padding:1px 5px;border-radius:5px;font-size:13px}
       '</div>' +
       (s.wrongIds.length ? '<div class="muted" style="margin-top:10px">错题：' + s.wrongIds.join(' ') + '</div>' : '<div class="muted" style="margin-top:10px">本轮没有错题 👍</div>') +
       '<div class="note" style="margin-top:10px">全库掌握率 ' + Math.round(st.masteryRate * 100) + '%（' + st.mastered + '/' + st.total + '）<br>' +
-        '现在有 <b>' + st.halfway + '</b> 题是「连对 1 次」状态——<b>它们再答对一次就变已掌握</b>。</div>' +
+        '🎯 ' + st.targetN + ' 连对目标：<b>' + st.targetDone + ' / ' + st.total + '</b>（还差 ' + st.targetLeft + ' 题）' +
+        (s.done ? '　本轮已把 <b>' + (st.targetDone - (view.session.targetAtStart == null ? 0 : view.session.targetAtStart)) +
+          '</b> 题推到 ' + st.targetN + ' 连对' : '') + '<br>' +
+        (st.halfway ? '现在有 <b>' + st.halfway + '</b> 题是「连对 1 次」状态——<b>它们再答对一次就变已掌握</b>。' : '') + '</div>' +
       (st.halfway ? '<button class="btn primary block" id="goHalf2">⚡ 接着刷「差一次」的 ' + st.halfway + ' 题</button>' : '') +
       '<button class="btn primary block" id="again">再来一轮记忆队列</button>' +
       (s.wrongIds.length ? '<button class="btn block" id="redo">只重刷本轮错题</button>' : '') +
